@@ -1,0 +1,17 @@
+{
+  "name": "ashityshop",
+  "version": "1.0.0",
+  "description": "AshityShop E-Commerce Platform",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "mongoose": "^8.9.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3"
+  }
+}
