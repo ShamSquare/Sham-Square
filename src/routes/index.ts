@@ -1,0 +1,46 @@
+import { Router } from 'express';
+import { roleRoutes } from './roleRoutes.js';
+import { userRoutes } from './userRoutes.js';
+import { addressRoutes } from './addressRoutes.js';
+import { categoryRoutes } from './categoryRoutes.js';
+import { subCategoryRoutes } from './subCategoryRoutes.js';
+import { productRoutes } from './productRoutes.js';
+import { productVariantRoutes } from './productVariantRoutes.js';
+import { productReviewRoutes } from './productReviewRoutes.js';
+import { wishlistRoutes } from './wishlistRoutes.js';
+import { cartRoutes } from './cartRoutes.js';
+import { cartItemRoutes } from './cartItemRoutes.js';
+import { orderRoutes } from './orderRoutes.js';
+import { orderItemRoutes } from './orderItemRoutes.js';
+import { orderTrackingRoutes } from './orderTrackingRoutes.js';
+import { notificationRoutes } from './notificationRoutes.js';
+import { couponRoutes } from './couponRoutes.js';
+import { bannerRoutes } from './bannerRoutes.js';
+import { supportTicketRoutes } from './supportTicketRoutes.js';
+import { auditLogRoutes } from './auditLogRoutes.js';
+import { settingRoutes } from './settingRoutes.js';
+
+const router = Router();
+
+router.use('/roles', roleRoutes);
+router.use('/users', userRoutes);
+router.use('/addresses', addressRoutes);
+router.use('/categories', categoryRoutes);
+router.use('/subcategories', subCategoryRoutes);
+router.use('/products', productRoutes);
+router.use('/product-variants', productVariantRoutes);
+router.use('/product-reviews', productReviewRoutes);
+router.use('/wishlists', wishlistRoutes);
+router.use('/carts', cartRoutes);
+router.use('/cart-items', cartItemRoutes);
+router.use('/orders', orderRoutes);
+router.use('/order-items', orderItemRoutes);
+router.use('/order-tracking', orderTrackingRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/coupons', couponRoutes);
+router.use('/banners', bannerRoutes);
+router.use('/support-tickets', supportTicketRoutes);
+router.use('/audit-logs', auditLogRoutes);
+router.use('/settings', settingRoutes);
+
+export { router as apiRouter };
