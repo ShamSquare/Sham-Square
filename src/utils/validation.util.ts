@@ -35,7 +35,7 @@ export const isValidObjectId = (id: string): boolean => {
  */
 export const isValidFCMToken = (token: string): boolean => {
   // FCM tokens are typically long strings, let's validate minimum length
-  return token && token.length > 100;
+  return token && token.length > 100 as any;
 };
 
 /**

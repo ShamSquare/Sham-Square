@@ -21,7 +21,7 @@ interface IFirebaseCredentials {
 }
 
 class FirebaseConfig {
-  private app: admin.app.App | null = null;
+  private app: admin.App | null = null;
   private messaging: admin.messaging.Messaging | null = null;
   private isInitialized: boolean = false;
 
@@ -43,7 +43,7 @@ class FirebaseConfig {
       };
 
       this.app = admin.initializeApp({
-        credential: admin.credential.cert(credentials),
+        credential: admin.cert(credentials as any),
         projectId: envConfig.firebase.projectId,
       });
 
@@ -60,7 +60,7 @@ class FirebaseConfig {
   /**
    * Get Firebase Admin App instance
    */
-  getApp(): admin.app.App {
+  getApp(): admin.App {
     if (!this.app) {
       throw new Error('Firebase not initialized. Call initialize() first.');
     }

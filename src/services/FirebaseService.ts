@@ -42,7 +42,7 @@ class FirebaseService {
       this.ensureInitialized();
       const messaging = firebaseConfig.getMessaging();
 
-      const message: admin.messaging.Message = {
+      const message: admin.Messaging = {
         notification: {
           title: payload.title,
           body: payload.body,

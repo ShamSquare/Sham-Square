@@ -70,7 +70,7 @@ class JWTConfig {
       this.config.refreshToken.secret &&
       this.config.accessToken.secret.length >= 32 &&
       this.config.refreshToken.secret.length >= 32
-    );
+    ) as any;
   }
 }
 

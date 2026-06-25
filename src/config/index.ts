@@ -3,11 +3,11 @@
  * Central export point for all configuration modules
  */
 
-export { default as envConfig } from './env.config';
-export { default as databaseConfig } from './database.config';
-export { default as cloudinaryConfig } from './cloudinary.config';
-export { default as firebaseConfig } from './firebase.config';
-export { default as jwtConfig } from './jwt.config';
+export { default as envConfig } from './env.config.js';
+export { default as databaseConfig } from './database.config.js';
+export { default as cloudinaryConfig } from './cloudinary.config.js';
+export { default as firebaseConfig } from './firebase.config.js';
+export { default as jwtConfig } from './jwt.config.js';
 
-export type { IEnvConfig } from './env.config';
-export type { IJWTConfig, ITokenPayload } from './jwt.config';
+export type { IEnvConfig } from './env.config.js';
+export type { IJWTConfig, ITokenPayload } from './jwt.config.js';

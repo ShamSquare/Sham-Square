@@ -6,7 +6,7 @@
 import jwt from 'jsonwebtoken';
 import jwtConfig, { ITokenPayload } from '../config/jwt.config.js';
 import logger from './logger.util.js';
-
+import { AppError } from './app-error.util.js';
 /**
  * Generate access token
  */
@@ -14,7 +14,7 @@ export const generateAccessToken = (payload: Omit<ITokenPayload, 'iat' | 'exp'>)
   try {
     const config = jwtConfig.getAccessTokenConfig();
     const token = jwt.sign(payload, config.secret, {
-      expiresIn: config.expiresIn,
+      expiresIn: config.expiresIn as any,
       algorithm: 'HS256',
     });
 
@@ -22,7 +22,7 @@ export const generateAccessToken = (payload: Omit<ITokenPayload, 'iat' | 'exp'>)
     return token;
   } catch (error) {
     logger.error('Error generating access token', error);
-    throw new Error('Failed to generate access token');
+    throw new AppError('Failed to generate access token', 500);
   }
 };
 
@@ -33,7 +33,7 @@ export const generateRefreshToken = (payload: Omit<ITokenPayload, 'iat' | 'exp'>
   try {
     const config = jwtConfig.getRefreshTokenConfig();
     const token = jwt.sign(payload, config.secret, {
-      expiresIn: config.expiresIn,
+      expiresIn: config.expiresIn as any,
       algorithm: 'HS256',
     });
 
@@ -69,7 +69,7 @@ export const verifyAccessToken = (token: string): ITokenPayload => {
     return decoded as ITokenPayload;
   } catch (error) {
     logger.warn('Access token verification failed', error);
-    throw new Error('Invalid or expired access token');
+    throw new AppError('Invalid or expired access token', 401, 'INVALID_ACCESS_TOKEN');
   }
 };
 
@@ -87,7 +87,7 @@ export const verifyRefreshToken = (token: string): ITokenPayload => {
     return decoded as ITokenPayload;
   } catch (error) {
     logger.warn('Refresh token verification failed', error);
-    throw new Error('Invalid or expired refresh token');
+    throw new AppError('Invalid or expired refresh token', 401);
   }
 };
 
