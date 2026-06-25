@@ -4,9 +4,11 @@
  */
 
 import dotenv from 'dotenv';
+import path from 'path/win32';
 
-dotenv.config();
-
+dotenv.config({
+  path: path.resolve(process.cwd(), '.env'),
+});
 export interface IEnvConfig {
   app: {
     port: number;

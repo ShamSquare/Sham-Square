@@ -38,7 +38,7 @@ app.use(
 /* =========================
    2. BODY PARSING
 ========================= */
-app.use(express.tson({ limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 /* =========================
@@ -52,7 +52,7 @@ if (env.app.nodeEnv !== 'production') {
    4. HEALTH CHECK
 ========================= */
 app.get('/health', (req, res) => {
-  res.status(200).tson({
+  res.status(200).json({
     success: true,
     message: 'Server is running 🚀',
   });
@@ -78,7 +78,7 @@ app.use(`${API_PREFIX}/notifications`, notificationRoutes);
    7. 404 HANDLER
 ========================= */
 app.use((req, res) => {
-  res.status(404).tson({
+  res.status(404).json({
     success: false,
     message: `Route ${req.originalUrl} not found`,
   });

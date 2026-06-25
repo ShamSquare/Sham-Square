@@ -3,19 +3,22 @@
   "version": "1.0.0",
   "description": "AshityShop E-Commerce Platform",
   "private": true,
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^4.22.2",
     "firebase-admin": "^14.1.0",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.24.1",
-    "morgan": "^1.11.0"
+    "morgan": "^1.11.0",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
