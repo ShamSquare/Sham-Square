@@ -4,6 +4,7 @@
  */
 
 import * as admin from 'firebase-admin';
+import { Message, MulticastMessage, Messaging, getMessaging } from 'firebase-admin/messaging';
 import envConfig from './env.config.ts';
 import logger from '../utils/logger.util.ts';
 
@@ -22,7 +23,7 @@ interface IFirebaseCredentials {
 
 class FirebaseConfig {
   private app: admin.App | null = null;
-  private messaging: admin.messaging.Messaging | null = null;
+  private messaging: Messaging | null = null;
   private isInitialized: boolean = false;
 
   /**
@@ -47,7 +48,7 @@ class FirebaseConfig {
         projectId: envConfig.firebase.projectId,
       });
 
-      this.messaging = admin.messaging(this.app);
+      this.messaging = getMessaging(this.app);
       this.isInitialized = true;
 
       logger.info('Firebase Admin SDK initialized successfully');
@@ -70,7 +71,7 @@ class FirebaseConfig {
   /**
    * Get Firebase Messaging instance
    */
-  getMessaging(): admin.messaging.Messaging {
+  getMessaging(): Messaging {
     if (!this.messaging) {
       throw new Error('Firebase Messaging not initialized. Call initialize() first.');
     }

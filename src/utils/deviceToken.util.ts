@@ -60,11 +60,18 @@ export const registerDevice = async (
       logger.info(`New device registered for user: ${userId}`);
     }
 
-    return {
-      success: true,
-      message: 'Device registered successfully',
-      deviceId: device._id.toString(),
-    };
+if (!device) {
+  return {
+    success: false,
+    message: 'Failed to create/update device',
+  };
+}
+
+return {
+  success: true,
+  message: 'Device registered successfully',
+  deviceId: device._id.toString(),
+};
   } catch (error) {
     logger.error('Error registering device', error);
     return {

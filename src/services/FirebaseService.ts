@@ -3,9 +3,11 @@
  * Handle Firebase Cloud Messaging for push notifications
  */
 
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
+import { Message, MulticastMessage, Messaging } from 'firebase-admin/messaging';
 import firebaseConfig from '../config/firebase.config.ts';
 import logger from '../utils/logger.util.ts';
+import { MessagingOptions } from 'child_process';
 
 export interface IPushNotificationPayload {
   title: string;
@@ -42,7 +44,7 @@ class FirebaseService {
       this.ensureInitialized();
       const messaging = firebaseConfig.getMessaging();
 
-      const message: admin.Messaging = {
+      const message: Message = {
         notification: {
           title: payload.title,
           body: payload.body,
@@ -87,7 +89,7 @@ class FirebaseService {
         };
       }
 
-      const message: admin.messaging.MulticastMessage = {
+      const message: MulticastMessage = {
         notification: {
           title: payload.title,
           body: payload.body,
@@ -96,7 +98,7 @@ class FirebaseService {
         tokens: fcmTokens,
       };
 
-      const response = await messaging.sendMulticast(message);
+const response = await messaging.sendEachForMulticast(message);
 
       const failedTokens: string[] = [];
       response.responses.forEach((resp: any, idx: any) => {
@@ -130,7 +132,7 @@ class FirebaseService {
       this.ensureInitialized();
       const messaging = firebaseConfig.getMessaging();
 
-      const message: admin.messaging.Message = {
+      const message: Message = {
         notification: {
           title: payload.title,
           body: payload.body,
@@ -207,13 +209,13 @@ class FirebaseService {
   async sendWithOptions(
     fcmToken: string,
     payload: IPushNotificationPayload,
-    options?: admin.messaging.MessagingOptions
+    options?: MessagingOptions
   ): Promise<ISendResult> {
     try {
       this.ensureInitialized();
       const messaging = firebaseConfig.getMessaging();
 
-      const message: admin.messaging.Message = {
+      const message: Message = {
         notification: {
           title: payload.title,
           body: payload.body,
