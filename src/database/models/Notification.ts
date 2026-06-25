@@ -24,6 +24,7 @@ export interface INotification extends Document {
   createdAt: Date;
 }
 
+
 const notificationSchema = new Schema<INotification>(
   {
     userId: {

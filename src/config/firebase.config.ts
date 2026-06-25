@@ -1,0 +1,88 @@
+/**
+ * Firebase Configuration
+ * Firebase Admin SDK setup for push notifications
+ */
+
+import * as admin from 'firebase-admin';
+import envConfig from './env.config.js';
+import logger from '../utils/logger.util.js';
+
+interface IFirebaseCredentials {
+  type: string;
+  project_id: string;
+  private_key_id?: string;
+  private_key: string;
+  client_email: string;
+  client_id?: string;
+  auth_uri?: string;
+  token_uri?: string;
+  auth_provider_x509_cert_url?: string;
+  client_x509_cert_url?: string;
+}
+
+class FirebaseConfig {
+  private app: admin.app.App | null = null;
+  private messaging: admin.messaging.Messaging | null = null;
+  private isInitialized: boolean = false;
+
+  /**
+   * Initialize Firebase Admin SDK
+   */
+  initialize(): void {
+    if (this.isInitialized && this.app) {
+      logger.info('Firebase already initialized');
+      return;
+    }
+
+    try {
+      const credentials: IFirebaseCredentials = {
+        type: 'service_account',
+        project_id: envConfig.firebase.projectId,
+        private_key: envConfig.firebase.privateKey,
+        client_email: envConfig.firebase.clientEmail,
+      };
+
+      this.app = admin.initializeApp({
+        credential: admin.credential.cert(credentials),
+        projectId: envConfig.firebase.projectId,
+      });
+
+      this.messaging = admin.messaging(this.app);
+      this.isInitialized = true;
+
+      logger.info('Firebase Admin SDK initialized successfully');
+    } catch (error) {
+      logger.error('Firebase initialization error', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get Firebase Admin App instance
+   */
+  getApp(): admin.app.App {
+    if (!this.app) {
+      throw new Error('Firebase not initialized. Call initialize() first.');
+    }
+    return this.app;
+  }
+
+  /**
+   * Get Firebase Messaging instance
+   */
+  getMessaging(): admin.messaging.Messaging {
+    if (!this.messaging) {
+      throw new Error('Firebase Messaging not initialized. Call initialize() first.');
+    }
+    return this.messaging;
+  }
+
+  /**
+   * Check if Firebase is initialized
+   */
+  isInitializedStatus(): boolean {
+    return this.isInitialized;
+  }
+}
+
+export default new FirebaseConfig();
