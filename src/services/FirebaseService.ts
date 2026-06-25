@@ -4,8 +4,8 @@
  */
 
 import * as admin from 'firebase-admin';
-import firebaseConfig from '../config/firebase.config.js';
-import logger from '../utils/logger.util.js';
+import firebaseConfig from '../config/firebase.config.ts';
+import logger from '../utils/logger.util.ts';
 
 export interface IPushNotificationPayload {
   title: string;

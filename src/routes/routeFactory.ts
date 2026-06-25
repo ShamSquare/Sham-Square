@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { asyncHandler } from '../controllers/asyncHandler.js';
-import type { CrudController } from '../controllers/CrudController.js';
+import { asyncHandler } from '../controllers/asyncHandler.ts';
+import type { CrudController } from '../controllers/CrudController.ts';
 import type { Document } from 'mongoose';
 
 export function createCrudRoutes<T extends Document>(controller: CrudController<T>) {

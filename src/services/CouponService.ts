@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.js';
-import { couponRepository } from '../database/repositories/index.js';
-import type { ICoupon } from '../database/models/index.js';
+import { BaseService } from './BaseService.ts';
+import { couponRepository } from '../database/repositories/index.ts';
+import type { ICoupon } from '../database/models/index.ts';
 
 export class CouponService extends BaseService<ICoupon> {
   constructor() {

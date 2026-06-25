@@ -6,8 +6,8 @@ import {
   SupportTicketCategory,
   SupportTicketPriority,
   SupportTicketStatus,
-} from '../enums/index.js';
-import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.js';
+} from '../enums/index.ts';
+import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.ts';
 
 export interface ISupportTicketMessage {
   _id?: Types.ObjectId;

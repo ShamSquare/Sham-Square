@@ -4,8 +4,8 @@
  */
 
 import * as admin from 'firebase-admin';
-import envConfig from './env.config.js';
-import logger from '../utils/logger.util.js';
+import envConfig from './env.config.ts';
+import logger from '../utils/logger.util.ts';
 
 interface IFirebaseCredentials {
   type: string;

@@ -1,5 +1,5 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
-import { AUDIT_ACTION_VALUES } from '../enums/index.js';
+import { AUDIT_ACTION_VALUES } from '../enums/index.ts';
 
 export interface IAuditLog extends Document {
   entityType: string;

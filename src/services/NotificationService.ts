@@ -1,14 +1,14 @@
 import { Types } from 'mongoose';
-import { BaseService } from './BaseService.js';
-import { notificationRepository } from '../database/repositories/index.js';
-import type { INotification } from '../database/models/index.js';
-import { Notification } from '../database/models/index.js';
+import { BaseService } from './BaseService.ts';
+import { notificationRepository } from '../database/repositories/index.ts';
+import type { INotification } from '../database/models/index.ts';
+import { Notification } from '../database/models/index.ts';
 import {
   NotificationType,
-} from '../database/enums/index.js';
-import UserDeviceModel from '../database/models/UserDevice.js';
-import FirebaseService from './FirebaseService.js';
-import logger from '../utils/logger.util.js';
+} from '../database/enums/index.ts';
+import UserDeviceModel from '../database/models/UserDevice.ts';
+import FirebaseService from './FirebaseService.ts';
+import logger from '../utils/logger.util.ts';
 
 export interface ICreateNotificationPayload {
   userId: Types.ObjectId;

@@ -3,7 +3,7 @@
  * JSON Web Token configuration and utilities
  */
 
-import envConfig from './env.config.js';
+import envConfig from './env.config.ts';
 
 export interface IJWTConfig {
   accessToken: {

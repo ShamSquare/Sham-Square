@@ -1,4 +1,4 @@
-import { createCrudRoutes } from './routeFactory.js';
-import { subCategoryController } from '../controllers/SubCategoryController.js';
+import { createCrudRoutes } from './routeFactory.ts';
+import { subCategoryController } from '../controllers/SubCategoryController.ts';
 
 export const subCategoryRoutes = createCrudRoutes(subCategoryController);

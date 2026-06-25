@@ -5,7 +5,7 @@ import type {
   QueryOptions,
   UpdateQuery,
 } from 'mongoose';
-import type { BaseRepository } from '../database/repositories/BaseRepository.js';
+import type { BaseRepository } from '../database/repositories/BaseRepository.ts';
 
 type CreatePayload<T extends Document> = Omit<T, keyof Document> & Record<string, unknown>;
 type LeanResult<T extends Document> = Omit<T, keyof Document> & {

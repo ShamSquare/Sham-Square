@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.js';
-import { bannerRepository } from '../database/repositories/index.js';
-import type { IBanner } from '../database/models/index.js';
+import { BaseService } from './BaseService.ts';
+import { bannerRepository } from '../database/repositories/index.ts';
+import type { IBanner } from '../database/models/index.ts';
 
 export class BannerService extends BaseService<IBanner> {
   constructor() {

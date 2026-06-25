@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.js';
-import { OrderTracking, type IOrderTracking } from '../models/index.js';
+import { BaseRepository } from './BaseRepository.ts';
+import { OrderTracking, type IOrderTracking } from '../models/index.ts';
 
 export class OrderTrackingRepository extends BaseRepository<IOrderTracking> {
   constructor() {

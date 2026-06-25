@@ -1,6 +1,6 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
-import { ORDER_ITEM_STATUS_VALUES, OrderItemStatus } from '../enums/index.js';
-import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.js';
+import { ORDER_ITEM_STATUS_VALUES, OrderItemStatus } from '../enums/index.ts';
+import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.ts';
 
 export interface IOrderItem extends Document {
   orderId: Types.ObjectId;

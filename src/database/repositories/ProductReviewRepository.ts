@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.js';
-import { ProductReview, type IProductReview } from '../models/index.js';
+import { BaseRepository } from './BaseRepository.ts';
+import { ProductReview, type IProductReview } from '../models/index.ts';
 
 export class ProductReviewRepository extends BaseRepository<IProductReview> {
   constructor() {

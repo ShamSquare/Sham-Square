@@ -1,5 +1,5 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
-import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.js';
+import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.ts';
 
 export interface ICartItem extends Document {
   cartId: Types.ObjectId;

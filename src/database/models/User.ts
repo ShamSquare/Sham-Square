@@ -4,8 +4,8 @@ import {
   DevicePlatform,
   USER_STATUS_VALUES,
   UserStatus,
-} from '../enums/index.js';
-import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.js';
+} from '../enums/index.ts';
+import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.ts';
 
 export interface IDeviceToken {
   token: string;

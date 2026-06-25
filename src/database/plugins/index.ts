@@ -2,7 +2,7 @@ import { Schema, type Query, type Types } from 'mongoose';
 import {
   PAYMENT_METHOD_VALUES,
   PAYMENT_STATUS_VALUES,
-} from '../enums/index.js';
+} from '../enums/index.ts';
 
 export interface IAuditFields {
   createdBy?: Types.ObjectId | null;

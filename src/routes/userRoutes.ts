@@ -10,7 +10,7 @@
  *         description: Success
  */
 import { Router } from 'express';
-import { createCrudRoutes } from './routeFactory.js';
-import { userController } from '../controllers/UserController.js';
+import { createCrudRoutes } from './routeFactory.ts';
+import { userController } from '../controllers/UserController.ts';
 
 export const userRoutes = createCrudRoutes(userController);

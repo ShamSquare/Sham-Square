@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.js';
-import { Wishlist, type IWishlist } from '../models/index.js';
+import { BaseRepository } from './BaseRepository.ts';
+import { Wishlist, type IWishlist } from '../models/index.ts';
 
 export class WishlistRepository extends BaseRepository<IWishlist> {
   constructor() {

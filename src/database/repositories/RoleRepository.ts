@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.js';
-import { Role, type IRole } from '../models/index.js';
+import { BaseRepository } from './BaseRepository.ts';
+import { Role, type IRole } from '../models/index.ts';
 
 export class RoleRepository extends BaseRepository<IRole> {
   constructor() {

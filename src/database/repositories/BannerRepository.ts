@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.js';
-import { Banner, type IBanner } from '../models/index.js';
+import { BaseRepository } from './BaseRepository.ts';
+import { Banner, type IBanner } from '../models/index.ts';
 
 export class BannerRepository extends BaseRepository<IBanner> {
   constructor() {

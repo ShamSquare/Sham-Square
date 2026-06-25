@@ -4,8 +4,8 @@
  */
 
 import { v2 as cloudinary } from 'cloudinary';
-import cloudinaryConfig from '../config/cloudinary.config.js';
-import logger from '../utils/logger.util.js';
+import cloudinaryConfig from '../config/cloudinary.config.ts';
+import logger from '../utils/logger.util.ts';
 
 export interface IUploadResult {
   publicId: string;

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import jwtUtil from '../utils/jwt.util.js';
-import { AppError } from '../utils/app-error.util.js';
+import jwtUtil from '../utils/jwt.util.ts';
+import { AppError } from '../utils/app-error.util.ts';
 
 export interface AuthRequest extends Request {
   user?: {

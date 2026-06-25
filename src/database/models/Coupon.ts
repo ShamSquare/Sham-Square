@@ -4,8 +4,8 @@ import {
   COUPON_TYPE_VALUES,
   CouponApplicability,
   CouponType,
-} from '../enums/index.js';
-import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.js';
+} from '../enums/index.ts';
+import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.ts';
 
 export interface ICoupon extends Document {
   code: string;

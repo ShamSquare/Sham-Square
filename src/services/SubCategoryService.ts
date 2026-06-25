@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.js';
-import { subCategoryRepository } from '../database/repositories/index.js';
-import type { ISubCategory } from '../database/models/index.js';
+import { BaseService } from './BaseService.ts';
+import { subCategoryRepository } from '../database/repositories/index.ts';
+import type { ISubCategory } from '../database/models/index.ts';
 
 export class SubCategoryService extends BaseService<ISubCategory> {
   constructor() {

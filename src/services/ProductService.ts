@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.js';
-import { productRepository } from '../database/repositories/index.js';
-import type { IProduct } from '../database/models/index.js';
+import { BaseService } from './BaseService.ts';
+import { productRepository } from '../database/repositories/index.ts';
+import type { IProduct } from '../database/models/index.ts';
 
 export class ProductService extends BaseService<IProduct> {
   constructor() {

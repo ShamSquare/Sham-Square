@@ -1,6 +1,6 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
-import { ROLE_NAME_VALUES, RoleName } from '../enums/index.js';
-import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.js';
+import { ROLE_NAME_VALUES, RoleName } from '../enums/index.ts';
+import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.ts';
 
 export interface IPermission {
   resource: string;

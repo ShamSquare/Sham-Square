@@ -4,8 +4,8 @@
  */
 
 import mongoose, { Connection, MongooseError } from 'mongoose';
-import envConfig from './env.config.js';
-import logger from '../utils/logger.util.js';
+import envConfig from './env.config.ts';
+import logger from '../utils/logger.util.ts';
 
 class DatabaseConfig {
   private connection: Connection | null = null;

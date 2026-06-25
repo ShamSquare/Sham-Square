@@ -4,8 +4,8 @@ import {
   BANNER_PLATFORM_VALUES,
   BannerLinkType,
   BannerPlatform,
-} from '../enums/index.js';
-import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.js';
+} from '../enums/index.ts';
+import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.ts';
 
 export interface IBanner extends Document {
   title: string;

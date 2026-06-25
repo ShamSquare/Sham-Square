@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.js';
-import { Address, type IAddress } from '../models/index.js';
+import { BaseRepository } from './BaseRepository.ts';
+import { Address, type IAddress } from '../models/index.ts';
 
 export class AddressRepository extends BaseRepository<IAddress> {
   constructor() {

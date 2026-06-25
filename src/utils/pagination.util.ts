@@ -3,7 +3,7 @@
  * Handle pagination logic for list endpoints
  */
 
-import { PAGINATION } from './constants.util.js';
+import { PAGINATION } from './constants.util.ts';
 
 export interface IPaginationParams {
   page?: number;

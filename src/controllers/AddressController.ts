@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.js';
-import { addressService } from '../services/index.js';
-import type { IAddress } from '../database/models/index.js';
+import { CrudController } from './CrudController.ts';
+import { addressService } from '../services/index.ts';
+import type { IAddress } from '../database/models/index.ts';
 
 export class AddressController extends CrudController<IAddress> {
   constructor() {

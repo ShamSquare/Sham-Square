@@ -4,7 +4,7 @@ import {
   OrderStatus,
   TRACKING_EVENT_SOURCE_VALUES,
   TrackingEventSource,
-} from '../enums/index.js';
+} from '../enums/index.ts';
 
 export interface IOrderTracking extends Document {
   orderId: Types.ObjectId;

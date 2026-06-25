@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.js';
-import { cartService } from '../services/index.js';
-import type { ICart } from '../database/models/index.js';
+import { CrudController } from './CrudController.ts';
+import { cartService } from '../services/index.ts';
+import type { ICart } from '../database/models/index.ts';
 
 export class CartController extends CrudController<ICart> {
   constructor() {

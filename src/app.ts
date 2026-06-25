@@ -3,23 +3,23 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import env from './config/env.config.js';
-import logger from './utils/logger.util.js';
+import env from './config/env.config.ts';
+import logger from './utils/logger.util.ts';
 
 // Routes
-import {userRoutes} from './routes/userRoutes.js';
-import {productRoutes} from './routes/productRoutes.js';
-import {orderRoutes} from './routes/orderRoutes.js';
-import {cartRoutes} from './routes/cartRoutes.js';
-import {categoryRoutes} from './routes/categoryRoutes.js';
-import {notificationRoutes} from './routes/notificationRoutes.js';
+import {userRoutes} from './routes/userRoutes.ts';
+import {productRoutes} from './routes/productRoutes.ts';
+import {orderRoutes} from './routes/orderRoutes.ts';
+import {cartRoutes} from './routes/cartRoutes.ts';
+import {categoryRoutes} from './routes/categoryRoutes.ts';
+import {notificationRoutes} from './routes/notificationRoutes.ts';
 
 // Utils
-import {errorHandler} from './middlewares/error.middleware.js';
+import {errorHandler} from './middlewares/error.middleware.ts';
 
 //Swagger
 import swaggerUi from 'swagger-ui-express';
-import {swaggerSpec} from './config/swagger.config.js';
+import {swaggerSpec} from './config/swagger.config.ts';
 
 const app = express();
 
@@ -38,7 +38,7 @@ app.use(
 /* =========================
    2. BODY PARSING
 ========================= */
-app.use(express.json({ limit: '10mb' }));
+app.use(express.tson({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 /* =========================
@@ -52,7 +52,7 @@ if (env.app.nodeEnv !== 'production') {
    4. HEALTH CHECK
 ========================= */
 app.get('/health', (req, res) => {
-  res.status(200).json({
+  res.status(200).tson({
     success: true,
     message: 'Server is running 🚀',
   });
@@ -78,7 +78,7 @@ app.use(`${API_PREFIX}/notifications`, notificationRoutes);
    7. 404 HANDLER
 ========================= */
 app.use((req, res) => {
-  res.status(404).json({
+  res.status(404).tson({
     success: false,
     message: `Route ${req.originalUrl} not found`,
   });

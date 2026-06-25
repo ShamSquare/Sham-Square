@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.js';
-import { orderRepository } from '../database/repositories/index.js';
-import type { IOrder } from '../database/models/index.js';
+import { BaseService } from './BaseService.ts';
+import { orderRepository } from '../database/repositories/index.ts';
+import type { IOrder } from '../database/models/index.ts';
 
 export class OrderService extends BaseService<IOrder> {
   constructor() {

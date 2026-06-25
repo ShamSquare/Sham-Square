@@ -1,6 +1,6 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
-import { PRODUCT_STATUS_VALUES, ProductStatus } from '../enums/index.js';
-import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.js';
+import { PRODUCT_STATUS_VALUES, ProductStatus } from '../enums/index.ts';
+import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.ts';
 
 export interface IProductRatingAggregate {
   average: number;

@@ -6,7 +6,7 @@ import {
   NotificationChannel,
   NotificationDeliveryStatus,
   NotificationType,
-} from '../enums/index.js';
+} from '../enums/index.ts';
 
 export interface INotification extends Document {
   userId: Types.ObjectId;

@@ -1,7 +1,7 @@
-import app from './app.js';
-import { connectDatabase } from './database/connection.js';
-import env from './config/env.config.js';
-import logger from './utils/logger.util.js';
+import app from './app.ts';
+import { connectDatabase } from './database/connection.ts';
+import env from './config/env.config.ts';
+import logger from './utils/logger.util.ts';
 
 // Handle uncaught errors (very important)
 process.on('uncaughtException', (err) => {

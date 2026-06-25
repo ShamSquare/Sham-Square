@@ -3,8 +3,8 @@
  * Handle file uploads and validations
  */
 
-import envConfig from '../config/env.config.js';
-import { isValidImageFile, isValidFileSize } from './validation.util.js';
+import envConfig from '../config/env.config.ts';
+import { isValidImageFile, isValidFileSize } from './validation.util.ts';
 
 export interface IFileValidationResult {
   valid: boolean;

@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.js';
-import { CartItem, type ICartItem } from '../models/index.js';
+import { BaseRepository } from './BaseRepository.ts';
+import { CartItem, type ICartItem } from '../models/index.ts';
 
 export class CartItemRepository extends BaseRepository<ICartItem> {
   constructor() {

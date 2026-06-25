@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.js';
-import { userRepository } from '../database/repositories/index.js';
-import type { IUser } from '../database/models/index.js';
+import { BaseService } from './BaseService.ts';
+import { userRepository } from '../database/repositories/index.ts';
+import type { IUser } from '../database/models/index.ts';
 
 export class UserService extends BaseService<IUser> {
   constructor() {

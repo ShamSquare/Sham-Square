@@ -1,11 +1,11 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
-import { ORDER_STATUS_VALUES, OrderStatus } from '../enums/index.js';
+import { ORDER_STATUS_VALUES, OrderStatus } from '../enums/index.ts';
 import {
   addressSnapshotSchema,
   auditFieldsPlugin,
   paymentDetailsSchema,
   softDeletePlugin,
-} from '../plugins/index.js';
+} from '../plugins/index.ts';
 
 export interface IOrderDelivery {
   agentId?: Types.ObjectId | null;

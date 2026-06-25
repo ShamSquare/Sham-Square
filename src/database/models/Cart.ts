@@ -1,6 +1,6 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
-import { CART_STATUS_VALUES, CartStatus } from '../enums/index.js';
-import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.js';
+import { CART_STATUS_VALUES, CartStatus } from '../enums/index.ts';
+import { auditFieldsPlugin, softDeletePlugin } from '../plugins/index.ts';
 
 export interface ICart extends Document {
   userId?: Types.ObjectId | null;

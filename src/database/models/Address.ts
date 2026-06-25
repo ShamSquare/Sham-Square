@@ -1,10 +1,10 @@
 import { Schema, model, type Document, type Types } from 'mongoose';
-import { ADDRESS_LABEL_VALUES, AddressLabel } from '../enums/index.js';
+import { ADDRESS_LABEL_VALUES, AddressLabel } from '../enums/index.ts';
 import {
   auditFieldsPlugin,
   geoPointSchema,
   softDeletePlugin,
-} from '../plugins/index.js';
+} from '../plugins/index.ts';
 
 export interface IAddress extends Document {
   userId: Types.ObjectId;

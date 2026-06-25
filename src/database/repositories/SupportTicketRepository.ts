@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.js';
-import { SupportTicket, type ISupportTicket } from '../models/index.js';
+import { BaseRepository } from './BaseRepository.ts';
+import { SupportTicket, type ISupportTicket } from '../models/index.ts';
 
 export class SupportTicketRepository extends BaseRepository<ISupportTicket> {
   constructor() {

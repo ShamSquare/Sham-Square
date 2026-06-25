@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.js';
-import { productService } from '../services/index.js';
-import type { IProduct } from '../database/models/index.js';
+import { CrudController } from './CrudController.ts';
+import { productService } from '../services/index.ts';
+import type { IProduct } from '../database/models/index.ts';
 
 export class ProductController extends CrudController<IProduct> {
   constructor() {

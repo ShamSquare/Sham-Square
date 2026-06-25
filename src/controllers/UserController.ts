@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.js';
-import { userService } from '../services/index.js';
-import type { IUser } from '../database/models/index.js';
+import { CrudController } from './CrudController.ts';
+import { userService } from '../services/index.ts';
+import type { IUser } from '../database/models/index.ts';
 
 export class UserController extends CrudController<IUser> {
   constructor() {

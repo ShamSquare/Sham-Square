@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { Document, UpdateQuery } from 'mongoose';
-import { BaseController } from './BaseController.js';
-import type { BaseService } from '../services/BaseService.js';
+import { BaseController } from './BaseController.ts';
+import type { BaseService } from '../services/BaseService.ts';
 
 type CreatePayload<T extends Document> = Omit<T, keyof Document> & Record<string, unknown>;
 
