@@ -18,7 +18,9 @@ interface ILogEntry {
 }
 
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === 'development';
+  private get isDevelopment(): boolean {
+    return process.env.NODE_ENV === 'development';
+  }
 
   /**
    * Format log entry

@@ -5,7 +5,9 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "dependencies": {
     "cloudinary": "^2.10.0",
@@ -18,7 +20,8 @@
     "mongoose": "^8.24.1",
     "morgan": "^1.11.0",
     "swagger-jsdoc": "^6.3.0",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "tsx": "^4.19.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

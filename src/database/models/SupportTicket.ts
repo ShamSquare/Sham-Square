@@ -88,7 +88,6 @@ const supportTicketSchema = new Schema<ISupportTicket>(
     ticketNumber: {
       type: String,
       required: true,
-      unique: true,
       uppercase: true,
       trim: true,
       maxlength: 32,

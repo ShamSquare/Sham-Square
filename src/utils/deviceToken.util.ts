@@ -4,7 +4,8 @@
  */
 
 import { Types } from 'mongoose';
-import UserDeviceModel, { DeviceType } from '../database/models/UserDevice.ts';
+import { UserDevice as UserDeviceModel } from '../database/models/index.ts';
+import type { DeviceType } from '../database/models/UserDevice.ts';
 import logger from './logger.util.ts';
 
 export interface IRegisterDevicePayload {

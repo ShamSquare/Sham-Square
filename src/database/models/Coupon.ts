@@ -39,7 +39,6 @@ const couponSchema = new Schema<ICoupon>(
     code: {
       type: String,
       required: true,
-      unique: true,
       uppercase: true,
       trim: true,
       maxlength: 32,
@@ -124,7 +123,6 @@ const couponSchema = new Schema<ICoupon>(
       type: Schema.Types.ObjectId,
       ref: 'Vendor',
       default: null,
-      index: true,
     },
   },
   {

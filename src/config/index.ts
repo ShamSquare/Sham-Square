@@ -4,7 +4,6 @@
  */
 
 export { default as envConfig } from './env.config.ts';
-export { default as databaseConfig } from './database.config.ts';
 export { default as cloudinaryConfig } from './cloudinary.config.ts';
 export { default as firebaseConfig } from './firebase.config.ts';
 export { default as jwtConfig } from './jwt.config.ts';

@@ -72,7 +72,6 @@ const cartSchema = new Schema<ICart>(
     expiresAt: {
       type: Date,
       default: null,
-      index: true,
     },
     convertedOrderId: {
       type: Schema.Types.ObjectId,

@@ -23,7 +23,6 @@ const settingSchema = new Schema<ISetting>(
     key: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       maxlength: 128,
       match: [/^[a-z][a-z0-9._-]*$/, 'Setting key must be lowercase dot-notation'],

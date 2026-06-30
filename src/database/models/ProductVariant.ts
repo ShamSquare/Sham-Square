@@ -48,7 +48,6 @@ const inventorySchema = {
     type: Schema.Types.ObjectId,
     ref: 'Warehouse',
     default: null,
-    index: true,
   },
 };
 
@@ -130,7 +129,6 @@ const productVariantSchema = new Schema<IProductVariant>(
     barcode: {
       type: String,
       trim: true,
-      sparse: true,
     },
     isDefault: {
       type: Boolean,
@@ -151,7 +149,6 @@ const productVariantSchema = new Schema<IProductVariant>(
 productVariantSchema.plugin(auditFieldsPlugin);
 productVariantSchema.plugin(softDeletePlugin);
 
-productVariantSchema.index({ sku: 1 }, { unique: true });
 productVariantSchema.index({ productId: 1, isActive: 1, isDeleted: 1 });
 productVariantSchema.index({ productId: 1, isDefault: 1 });
 productVariantSchema.index({ barcode: 1 }, { unique: true, sparse: true });

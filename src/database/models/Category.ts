@@ -79,7 +79,6 @@ const categorySchema = new Schema<ICategory>(
 categorySchema.plugin(auditFieldsPlugin);
 categorySchema.plugin(softDeletePlugin);
 
-categorySchema.index({ slug: 1 }, { unique: true });
 categorySchema.index({ isActive: 1, sortOrder: 1, isDeleted: 1 });
 categorySchema.index({ vendorId: 1, isActive: 1 }, { sparse: true });
 

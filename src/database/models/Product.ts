@@ -182,7 +182,6 @@ const productSchema = new Schema<IProduct>(
 productSchema.plugin(auditFieldsPlugin);
 productSchema.plugin(softDeletePlugin);
 
-productSchema.index({ slug: 1 }, { unique: true });
 productSchema.index({ categoryId: 1, subCategoryId: 1, status: 1, isDeleted: 1 });
 productSchema.index({ vendorId: 1, status: 1, isDeleted: 1 }, { sparse: true });
 productSchema.index({ status: 1, isFeatured: 1, 'rating.average': -1 });

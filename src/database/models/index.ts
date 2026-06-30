@@ -57,3 +57,6 @@ export type { IAuditLog } from './AuditLog.ts';
 
 export { Setting } from './Setting.ts';
 export type { ISetting } from './Setting.ts';
+
+export { UserDevice } from './UserDevice.ts';
+export type { IUserDevice } from './UserDevice.ts';

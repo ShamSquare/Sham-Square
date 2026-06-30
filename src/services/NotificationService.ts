@@ -6,7 +6,7 @@ import { Notification } from '../database/models/index.ts';
 import {
   NotificationType,
 } from '../database/enums/index.ts';
-import UserDeviceModel from '../database/models/UserDevice.ts';
+import { UserDevice as UserDeviceModel } from '../database/models/index.ts';
 import FirebaseService from './FirebaseService.ts';
 import logger from '../utils/logger.util.ts';
 

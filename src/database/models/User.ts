@@ -84,7 +84,6 @@ const userSchema = new Schema<IUser>(
     phone: {
       type: String,
       trim: true,
-      sparse: true,
       maxlength: 20,
     },
     passwordHash: {
@@ -164,7 +163,6 @@ const userSchema = new Schema<IUser>(
 userSchema.plugin(auditFieldsPlugin);
 userSchema.plugin(softDeletePlugin);
 
-userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ phone: 1 }, { unique: true, sparse: true });
 userSchema.index({ roleId: 1, status: 1, isDeleted: 1 });
 userSchema.index({ vendorId: 1, isDeleted: 1 }, { sparse: true });

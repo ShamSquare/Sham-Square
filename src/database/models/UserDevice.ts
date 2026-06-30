@@ -75,4 +75,6 @@ userDeviceSchema.pre('save', async function (next) {
   }
 });
 
-export default model<IUserDevice>('UserDevice', userDeviceSchema);
+const UserDeviceModel = model<IUserDevice>('UserDevice', userDeviceSchema);
+export { UserDeviceModel as UserDevice };
+export default UserDeviceModel;

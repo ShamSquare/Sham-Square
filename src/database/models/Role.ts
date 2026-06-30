@@ -90,7 +90,6 @@ const roleSchema = new Schema<IRole>(
 roleSchema.plugin(auditFieldsPlugin);
 roleSchema.plugin(softDeletePlugin);
 
-roleSchema.index({ name: 1 }, { unique: true });
 roleSchema.index({ isActive: 1, isDeleted: 1 });
 
 export const Role = model<IRole>('Role', roleSchema);

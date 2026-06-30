@@ -7,7 +7,6 @@ import admin from 'firebase-admin';
 import { Message, MulticastMessage, Messaging } from 'firebase-admin/messaging';
 import firebaseConfig from '../config/firebase.config.ts';
 import logger from '../utils/logger.util.ts';
-import { MessagingOptions } from 'child_process';
 
 export interface IPushNotificationPayload {
   title: string;
@@ -209,7 +208,7 @@ const response = await messaging.sendEachForMulticast(message);
   async sendWithOptions(
     fcmToken: string,
     payload: IPushNotificationPayload,
-    options?: MessagingOptions
+    options?: Record<string, unknown>
   ): Promise<ISendResult> {
     try {
       this.ensureInitialized();

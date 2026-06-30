@@ -76,7 +76,6 @@ const orderSchema = new Schema<IOrder>(
     orderNumber: {
       type: String,
       required: true,
-      unique: true,
       uppercase: true,
       trim: true,
       maxlength: 32,

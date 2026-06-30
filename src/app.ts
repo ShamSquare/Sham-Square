@@ -7,12 +7,7 @@ import env from './config/env.config.ts';
 import logger from './utils/logger.util.ts';
 
 // Routes
-import {userRoutes} from './routes/userRoutes.ts';
-import {productRoutes} from './routes/productRoutes.ts';
-import {orderRoutes} from './routes/orderRoutes.ts';
-import {cartRoutes} from './routes/cartRoutes.ts';
-import {categoryRoutes} from './routes/categoryRoutes.ts';
-import {notificationRoutes} from './routes/notificationRoutes.ts';
+import { apiRouter } from './routes/index.ts';
 
 // Utils
 import {errorHandler} from './middlewares/error.middleware.ts';
@@ -58,21 +53,20 @@ app.get('/health', (req, res) => {
   });
 });
 /* =========================
-  5. SWAGGER DOCUMENTATION
+   5. SWAGGER DOCUMENTATION
 ========================= */
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+if (env.app.nodeEnv !== 'production') {
+  app.get('/', (req, res) => {
+    res.redirect('/api/docs');
+  });
+}
 
 /* =========================
    6. API ROUTES
 ========================= */
-const API_PREFIX = '/api/v1';
-
-app.use(`${API_PREFIX}/users`, userRoutes);
-app.use(`${API_PREFIX}/products`, productRoutes);
-app.use(`${API_PREFIX}/orders`, orderRoutes);
-app.use(`${API_PREFIX}/cart`, cartRoutes);
-app.use(`${API_PREFIX}/categories`, categoryRoutes);
-app.use(`${API_PREFIX}/notifications`, notificationRoutes);
+app.use('/api/v1', apiRouter);
 
 /* =========================
    7. 404 HANDLER
