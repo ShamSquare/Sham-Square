@@ -2,28 +2,60 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/app-error.util.ts';
 import logger from '../utils/logger.util.ts';
 import { errorResponse } from '../utils/api-response.util.ts';
+import env from '../config/env.config.ts';
 
 export function errorHandler(
   err: any,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) {
-  logger.error(err);
+  logger.error('Request failed', {
+    message: err?.message,
+    stack: err?.stack,
+    method: req.method,
+    path: req.originalUrl,
+    statusCode: err?.statusCode,
+    code: err?.code,
+  });
 
-  // default error
   let statusCode = 500;
   let message = 'Internal Server Error';
-  let code = undefined;
+  let code: string | undefined = 'INTERNAL_SERVER_ERROR';
+  let errors: Record<string, any> | undefined;
 
-  // if it's our custom error
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
     code = err.code;
+  } else if (err?.name === 'ValidationError') {
+    statusCode = 422;
+    message = 'Validation failed';
+    code = 'VALIDATION_ERROR';
+    errors = Object.fromEntries(
+      Object.entries(err.errors ?? {}).map(([field, value]: [string, any]) => [
+        field,
+        value?.message ?? 'Invalid value',
+      ])
+    );
+  } else if (err?.name === 'CastError') {
+    statusCode = 400;
+    message = 'Invalid resource identifier';
+    code = 'BAD_REQUEST';
+  } else if (err?.code === 11000) {
+    statusCode = 409;
+    message = 'A record with this value already exists';
+    code = 'CONFLICT';
+    errors = err.keyValue;
+  } else if (err?.name === 'JsonWebTokenError' || err?.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Invalid or expired token';
+    code = 'UNAUTHORIZED';
   }
 
-res.status(statusCode).json(
-  errorResponse(message, code)
-);
+  if (statusCode === 500 && env.app.nodeEnv === 'production') {
+    message = 'Internal Server Error';
+  }
+
+  res.status(statusCode).json(errorResponse(message, code, errors));
 }

@@ -20,6 +20,7 @@ import { connectDatabase, disconnectDatabase } from './database/connection.ts';
 // 4. Express app  (routes, middleware, swagger — all registered here)
 // ═══════════════════════════════════════════════════════════════════════════════
 import app from './app.ts';
+import { realtimeService } from './services/RealtimeService.ts';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 5. Global error handlers  (catch anything that slips through)
@@ -53,6 +54,7 @@ async function startServer(): Promise<void> {
   const server = app.listen(env.app.port, () => {
     logger.info(`Server listening on port ${env.app.port}`);
   });
+  realtimeService.initialize(server);
 
   // ── 6c. Graceful shutdown ────────────────────────────────────────────
   const shutdown = async (signal: string) => {
