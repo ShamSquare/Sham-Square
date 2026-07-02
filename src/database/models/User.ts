@@ -146,7 +146,7 @@ const userSchema = new Schema<IUser>(
           enum: ['Point'],
           default: 'Point',
         },
-        coordinates: { type: [Number], default: undefined },
+        coordinates: { type: [Number], default: [0,0] },
       },
     },
     metadata: {
