@@ -13,7 +13,7 @@ const options = {
 
     servers: [
       {
-        url: `http://localhost:${envConfig.app.port}`,
+        url: `https://ashityshop.onrender.com`,
         description: 'Development server',
       },
     ],
