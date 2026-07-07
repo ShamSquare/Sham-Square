@@ -1,9 +1,9 @@
 import { BaseRepository } from './BaseRepository.ts';
-import { Banner, type IBanner } from '../models/index.ts';
+import type { IBanner } from '../models/index.ts';
 
 export class BannerRepository extends BaseRepository<IBanner> {
   constructor() {
-    super(Banner);
+    super('banners');
   }
 }
 

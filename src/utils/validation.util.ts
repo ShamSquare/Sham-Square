@@ -24,10 +24,10 @@ export const isValidUrl = (url: string): boolean => {
 };
 
 /**
- * Validate MongoDB ObjectId
+ * Validate UUID format
  */
-export const isValidObjectId = (id: string): boolean => {
-  return /^[0-9a-fA-F]{24}$/.test(id);
+export const isValidUUID = (id: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 };
 
 /**
@@ -153,10 +153,13 @@ export const isValidJWTFormat = (token: string): boolean => {
   return parts.length === 3 && parts.every((part) => part.length > 0);
 };
 
+export const isValidObjectId = isValidUUID;
+
 export default {
   isValidEmail,
   isValidUrl,
   isValidObjectId,
+  isValidUUID,
   isValidFCMToken,
   isValidPhoneNumber,
   isStrongPassword,

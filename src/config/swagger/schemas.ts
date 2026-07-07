@@ -33,13 +33,13 @@ export const schemas: Record<string, object> = {
   User: {
     type: 'object',
     properties: {
-      _id: { type: 'string', description: 'MongoDB ObjectId' },
+      id: { type: 'string', description: 'UUID primary key' },
       email: { type: 'string', format: 'email', maxLength: 254, example: 'user@example.com' },
       phone: { type: 'string', maxLength: 20, nullable: true },
       firstName: { type: 'string', maxLength: 64, example: 'John' },
       lastName: { type: 'string', maxLength: 64, example: 'Doe' },
       avatar: { type: 'string', nullable: true },
-      roleId: { type: 'string', description: 'Role ObjectId reference' },
+      roleId: { type: 'string', description: 'Role UUID reference' },
       status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION'] },
       emailVerified: { type: 'boolean' },
       phoneVerified: { type: 'boolean' },
@@ -61,7 +61,7 @@ export const schemas: Record<string, object> = {
       firstName: { type: 'string', maxLength: 64, example: 'John' },
       lastName: { type: 'string', maxLength: 64, example: 'Doe' },
       phone: { type: 'string', maxLength: 20, example: '+1234567890' },
-      roleId: { type: 'string', description: 'Role ObjectId' },
+      roleId: { type: 'string', description: 'Role UUID' },
       status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION'] },
     },
   },
@@ -162,7 +162,7 @@ export const schemas: Record<string, object> = {
     type: 'object',
     properties: {
       _id: { type: 'string' },
-      categoryId: { type: 'string', description: 'Parent Category ObjectId' },
+      categoryId: { type: 'string', description: 'Parent Category UUID' },
       name: { type: 'string', maxLength: 120, example: 'Smartphones' },
       slug: { type: 'string', maxLength: 140, example: 'smartphones' },
       description: { type: 'string', maxLength: 2000 },
@@ -180,7 +180,7 @@ export const schemas: Record<string, object> = {
     type: 'object',
     required: ['categoryId', 'name', 'slug'],
     properties: {
-      categoryId: { type: 'string', description: 'Category ObjectId' },
+      categoryId: { type: 'string', description: 'Category UUID' },
       name: { type: 'string', maxLength: 120, example: 'Smartphones' },
       slug: { type: 'string', maxLength: 140, example: 'smartphones', pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$' },
       description: { type: 'string', maxLength: 2000 },

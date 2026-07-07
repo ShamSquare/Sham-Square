@@ -1,9 +1,9 @@
 import { BaseRepository } from './BaseRepository.ts';
-import { SupportTicket, type ISupportTicket } from '../models/index.ts';
+import type { ISupportTicket } from '../models/index.ts';
 
 export class SupportTicketRepository extends BaseRepository<ISupportTicket> {
   constructor() {
-    super(SupportTicket);
+    super('support_tickets');
   }
 }
 

@@ -1,9 +1,9 @@
 import { BaseRepository } from './BaseRepository.ts';
-import { Address, type IAddress } from '../models/index.ts';
+import type { IAddress } from '../models/index.ts';
 
 export class AddressRepository extends BaseRepository<IAddress> {
   constructor() {
-    super(Address);
+    super('addresses');
   }
 }
 

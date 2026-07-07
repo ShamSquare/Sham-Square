@@ -1,2 +1,2 @@
 # AshityShop
-Ecommerce Project
+Ecommerce Project — Node.js + Express + Supabase PostgreSQL

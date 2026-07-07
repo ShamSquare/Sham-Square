@@ -1,17 +1,14 @@
-import { Types } from 'mongoose';
 import { BaseService } from './BaseService.ts';
-import { notificationRepository } from '../database/repositories/index.ts';
+import { notificationRepository, userDeviceRepository } from '../database/repositories/index.ts';
 import type { INotification } from '../database/models/index.ts';
-import { Notification } from '../database/models/index.ts';
 import {
   NotificationType,
 } from '../database/enums/index.ts';
-import { UserDevice as UserDeviceModel } from '../database/models/index.ts';
 import FirebaseService from './FirebaseService.ts';
 import logger from '../utils/logger.util.ts';
 
 export interface ICreateNotificationPayload {
-  userId: Types.ObjectId;
+  userId: string;
   title: string;
   message: string;
   type: NotificationType;
@@ -35,10 +32,6 @@ export class NotificationService extends BaseService<INotification> {
     super(notificationRepository);
   }
 
-  /**
-   * Create and send notification
-   * Saves to DB and sends push notification if requested
-   */
   async createAndSendNotification(
     payload: ISendNotificationPayload
   ): Promise<INotificationResult> {
@@ -47,21 +40,19 @@ export class NotificationService extends BaseService<INotification> {
     try {
       let notificationId: string | undefined;
 
-      // Save to database if sendInApp is true
       if (sendInApp) {
-        const notification = await Notification.create({
+        const notification = await notificationRepository.create({
           userId,
           title,
-          message,
+          body: message,
           type,
-          metadata: metadata || {},
+          data: metadata || {},
           isRead: false,
         });
-        notificationId = notification._id.toString();
+        notificationId = (notification as any).id;
         logger.info(`Notification saved to database: ${notificationId}`);
       }
 
-      // Send push notification if sendPush is true
       if (sendPush) {
         await this.sendPushNotification(userId, title, message, type, metadata);
       }
@@ -80,19 +71,15 @@ export class NotificationService extends BaseService<INotification> {
     }
   }
 
-  /**
-   * Send push notification to user's devices
-   */
   async sendPushNotification(
-    userId: Types.ObjectId,
+    userId: string,
     title: string,
     message: string,
     type: NotificationType,
     metadata?: Record<string, any>
   ): Promise<any> {
     try {
-      // Fetch all active FCM tokens for user
-      const userDevices = await UserDeviceModel.find({
+      const userDevices = await userDeviceRepository.find({
         userId,
         isActive: true,
       });
@@ -107,7 +94,6 @@ export class NotificationService extends BaseService<INotification> {
 
       const fcmTokens = userDevices.map((device) => device.fcmToken);
 
-      // Send multicast notification
       const result = await FirebaseService.sendToMultipleDevices(fcmTokens, {
         title,
         body: message,
@@ -121,7 +107,6 @@ export class NotificationService extends BaseService<INotification> {
         `Push notifications sent. Success: ${result.successCount}, Failed: ${result.failureCount}`
       );
 
-      // Remove failed tokens
       if (result.failedTokens.length > 0) {
         await this.handleFailedTokens(result.failedTokens);
       }
@@ -137,30 +122,22 @@ export class NotificationService extends BaseService<INotification> {
     }
   }
 
-  /**
-   * Handle failed FCM tokens
-   * Deactivate or delete invalid tokens
-   */
   private async handleFailedTokens(tokens: string[]): Promise<void> {
     try {
-      await UserDeviceModel.updateMany(
-        { fcmToken: { $in: tokens } },
-        { isActive: false }
-      );
+      for (const token of tokens) {
+        await userDeviceRepository.updateOne({ fcmToken: token }, { isActive: false });
+      }
       logger.info(`Deactivated ${tokens.length} failed FCM tokens`);
     } catch (error) {
       logger.error('Error handling failed tokens', error);
     }
   }
 
-  /**
-   * Send notification on order status change
-   */
   async sendOrderStatusNotification(
-    userId: Types.ObjectId,
+    userId: string,
     orderNumber: string,
     orderStatus: string,
-    orderId: Types.ObjectId
+    orderId: string
   ): Promise<INotificationResult> {
     const statusNotificationMap: Record<string, { title: string; message: string; type: NotificationType }> = {
       PENDING: {
@@ -217,11 +194,8 @@ export class NotificationService extends BaseService<INotification> {
     });
   }
 
-  /**
-   * Send promotional notification
-   */
   async sendPromotionalNotification(
-    userIds: Types.ObjectId[],
+    userIds: string[],
     title: string,
     message: string,
     metadata?: Record<string, any>
@@ -257,22 +231,19 @@ export class NotificationService extends BaseService<INotification> {
     }
   }
 
-  /**
-   * Get user notifications
-   */
   async getUserNotifications(
-    userId: Types.ObjectId,
+    userId: string,
     limit: number = 20,
     skip: number = 0
   ): Promise<any> {
     try {
-      const notifications = await Notification.find({ userId })
-        .sort({ createdAt: -1 })
-        .limit(limit)
-        .skip(skip);
+      const notifications = await notificationRepository.find(
+        { userId },
+        { limit, offset: skip, orderBy: 'createdAt', orderDir: 'desc' }
+      );
 
-      const total = await Notification.countDocuments({ userId });
-      const unreadCount = await Notification.countDocuments({ userId, isRead: false });
+      const total = await notificationRepository.count({ userId });
+      const unreadCount = await notificationRepository.count({ userId, isRead: false });
 
       return {
         notifications,
@@ -287,15 +258,11 @@ export class NotificationService extends BaseService<INotification> {
     }
   }
 
-  /**
-   * Mark notification as read
-   */
-  async markAsRead(notificationId: Types.ObjectId): Promise<any> {
+  async markAsRead(notificationId: string): Promise<any> {
     try {
-      const notification = await Notification.findByIdAndUpdate(
+      const notification = await notificationRepository.updateById(
         notificationId,
-        { isRead: true },
-        { new: true }
+        { isRead: true }
       );
 
       logger.info(`Notification marked as read: ${notificationId}`);
@@ -306,30 +273,24 @@ export class NotificationService extends BaseService<INotification> {
     }
   }
 
-  /**
-   * Mark all user notifications as read
-   */
-  async markAllAsRead(userId: Types.ObjectId): Promise<any> {
+  async markAllAsRead(userId: string): Promise<any> {
     try {
-      const result = await Notification.updateMany(
-        { userId, isRead: false },
-        { isRead: true }
-      );
+      const notifications = await notificationRepository.find({ userId, isRead: false });
+      for (const notification of notifications) {
+        await notificationRepository.updateById(notification.id, { isRead: true });
+      }
 
-      logger.info(`Marked ${result.modifiedCount} notifications as read for user: ${userId}`);
-      return result;
+      logger.info(`Marked notifications as read for user: ${userId}`);
+      return { success: true };
     } catch (error) {
       logger.error('Error marking all notifications as read', error);
       throw error;
     }
   }
 
-  /**
-   * Delete notification
-   */
-  async deleteNotification(notificationId: Types.ObjectId): Promise<any> {
+  async deleteNotification(notificationId: string): Promise<any> {
     try {
-      const result = await Notification.findByIdAndDelete(notificationId);
+      const result = await notificationRepository.deleteById(notificationId);
       logger.info(`Notification deleted: ${notificationId}`);
       return result;
     } catch (error) {
@@ -338,20 +299,19 @@ export class NotificationService extends BaseService<INotification> {
     }
   }
 
-  /**
-   * Clear old notifications (for cleanup)
-   */
   async clearOldNotifications(daysOld: number = 30): Promise<any> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
-      const result = await Notification.deleteMany({
-        createdAt: { $lt: cutoffDate },
-      });
+      const allNotifications = await notificationRepository.find();
+      const oldNotifications = allNotifications.filter((n) => new Date(n.createdAt) < cutoffDate);
+      for (const notification of oldNotifications) {
+        await notificationRepository.deleteById(notification.id);
+      }
 
-      logger.info(`Cleared ${result.deletedCount} old notifications`);
-      return result;
+      logger.info(`Cleared old notifications`);
+      return { success: true };
     } catch (error) {
       logger.error('Error clearing old notifications', error);
       throw error;

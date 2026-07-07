@@ -1,9 +1,9 @@
 import { BaseRepository } from './BaseRepository.ts';
-import { OrderItem, type IOrderItem } from '../models/index.ts';
+import type { IOrderItem } from '../models/index.ts';
 
 export class OrderItemRepository extends BaseRepository<IOrderItem> {
   constructor() {
-    super(OrderItem);
+    super('order_items');
   }
 }
 

@@ -31,7 +31,7 @@ export class OrderController extends CrudController<IOrder> {
         userId as any,
         created.orderNumber,
         OrderStatus.PENDING,
-        created._id as any
+        created.id
       );
     } catch {
       // keep order creation intact even if notification fails

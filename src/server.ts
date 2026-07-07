@@ -43,12 +43,9 @@ process.on('unhandledRejection', (err: any) => {
 async function startServer(): Promise<void> {
   logger.info('Starting AshityShop server...');
 
-  // ── 6a. Connect to MongoDB ───────────────────────────────────────────
-  await connectDatabase({
-    uri: env.database.mongodbUri,
-    dbName: 'ashityshop',
-  });
-  logger.info('MongoDB connected');
+  // ── 6a. Connect to database ──────────────────────────────────────────
+  await connectDatabase();
+  logger.info('Database connected');
 
   // ── 6b. Start HTTP server ────────────────────────────────────────────
   const server = app.listen(env.app.port, () => {

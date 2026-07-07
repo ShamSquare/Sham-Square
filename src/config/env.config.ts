@@ -23,8 +23,10 @@ export interface IEnvConfig {
     port: number;
     nodeEnv: 'development' | 'production' | 'testing';
   };
-  database: {
-    mongodbUri: string;
+  supabase: {
+    url: string;
+    anonKey: string;
+    serviceRoleKey: string;
   };
   jwt: {
     accessSecret: string;
@@ -86,8 +88,10 @@ const envConfig: IEnvConfig = {
     nodeEnv: getEnvVariable('NODE_ENV', 'development') as IEnvConfig['app']['nodeEnv'],
   },
 
-  database: {
-    mongodbUri: getEnvVariable('MONGODB_URI'),
+  supabase: {
+    url: getEnvVariable('SUPABASE_URL'),
+    anonKey: getEnvVariable('SUPABASE_ANON_KEY'),
+    serviceRoleKey: getEnvVariable('SUPABASE_SERVICE_ROLE_KEY'),
   },
 
   jwt: {

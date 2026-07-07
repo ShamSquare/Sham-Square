@@ -1,9 +1,9 @@
 import { BaseRepository } from './BaseRepository.ts';
-import { Category, type ICategory } from '../models/index.ts';
+import type { ICategory } from '../models/index.ts';
 
 export class CategoryRepository extends BaseRepository<ICategory> {
   constructor() {
-    super(Category);
+    super('categories');
   }
 }
 

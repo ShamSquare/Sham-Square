@@ -1,9 +1,9 @@
 import { BaseRepository } from './BaseRepository.ts';
-import { ProductVariant, type IProductVariant } from '../models/index.ts';
+import type { IProductVariant } from '../models/index.ts';
 
 export class ProductVariantRepository extends BaseRepository<IProductVariant> {
   constructor() {
-    super(ProductVariant);
+    super('product_variants');
   }
 }
 

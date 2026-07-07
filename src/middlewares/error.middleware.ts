@@ -28,25 +28,14 @@ export function errorHandler(
     statusCode = err.statusCode;
     message = err.message;
     code = err.code;
-  } else if (err?.name === 'ValidationError') {
-    statusCode = 422;
-    message = 'Validation failed';
-    code = 'VALIDATION_ERROR';
-    errors = Object.fromEntries(
-      Object.entries(err.errors ?? {}).map(([field, value]: [string, any]) => [
-        field,
-        value?.message ?? 'Invalid value',
-      ])
-    );
-  } else if (err?.name === 'CastError') {
-    statusCode = 400;
-    message = 'Invalid resource identifier';
-    code = 'BAD_REQUEST';
-  } else if (err?.code === 11000) {
+  } else if (err?.code === '23505') {
     statusCode = 409;
     message = 'A record with this value already exists';
     code = 'CONFLICT';
-    errors = err.keyValue;
+  } else if (err?.code?.startsWith('PGRST')) {
+    statusCode = 400;
+    message = err?.message ?? 'Database request error';
+    code = 'BAD_REQUEST';
   } else if (err?.name === 'JsonWebTokenError' || err?.name === 'TokenExpiredError') {
     statusCode = 401;
     message = 'Invalid or expired token';

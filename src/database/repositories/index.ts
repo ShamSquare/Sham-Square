@@ -18,3 +18,4 @@ export { BannerRepository, bannerRepository } from './BannerRepository.ts';
 export { SupportTicketRepository, supportTicketRepository } from './SupportTicketRepository.ts';
 export { AuditLogRepository, auditLogRepository } from './AuditLogRepository.ts';
 export { SettingRepository, settingRepository } from './SettingRepository.ts';
+export { UserDeviceRepository, userDeviceRepository } from './UserDeviceRepository.ts';

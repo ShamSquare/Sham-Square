@@ -22,8 +22,10 @@ cp .env.example .env
 PORT=5000
 NODE_ENV=development
 
-# Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ashityshop
+# Database (Supabase PostgreSQL)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # JWT Tokens
 JWT_ACCESS_SECRET=your_secret_key_here_min_32_chars
@@ -60,7 +62,8 @@ MAX_FILE_SIZE=5242880
 
 ```typescript
 import express from 'express';
-import { databaseConfig, cloudinaryConfig, firebaseConfig } from './config';
+import { envConfig, cloudinaryConfig, firebaseConfig } from './config';
+import { connectDatabase, disconnectDatabase } from './database/connection';
 import logger from './utils/logger.util';
 
 const app = express();
@@ -69,7 +72,7 @@ const app = express();
 async function initializeApp() {
   try {
     // Initialize database
-    await databaseConfig.initialize();
+    await connectDatabase();
     logger.info('Database initialized');
 
     // Initialize Cloudinary
@@ -94,7 +97,7 @@ async function initializeApp() {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
-  await databaseConfig.disconnect();
+  await disconnectDatabase();
   process.exit(0);
 });
 
@@ -109,16 +112,17 @@ initializeApp();
 import { envConfig } from './config';
 
 const port = envConfig.app.port;
-const mongoUri = envConfig.database.mongodbUri;
+const supabaseUrl = envConfig.supabase.url;
 const maxFileSize = envConfig.upload.maxFileSize;
 ```
 
 **Check Configuration Status:**
 
 ```typescript
-import { databaseConfig, cloudinaryConfig, firebaseConfig } from './config';
+import { cloudinaryConfig, firebaseConfig } from './config';
+import databaseConnection from './database/connection';
 
-if (databaseConfig.isConnectedToDatabase()) {
+if (databaseConnection.isConnectedToDatabase()) {
   console.log('Database is connected');
 }
 
@@ -148,8 +152,8 @@ console.log(result.publicId);   // ashityshop/products/product_123_timestamp
 console.log(result.secureUrl);  // https://res.cloudinary.com/.../image.jpg
 console.log(result.size);       // File size in bytes
 
-// Save to database
-await Product.findByIdAndUpdate(productId, {
+// Save to database using repository
+await productRepository.updateById(productId, {
   image: {
     publicId: result.publicId,
     url: result.secureUrl
@@ -170,7 +174,7 @@ import { notificationService } from './services/NotificationService';
 
 // Send order confirmation notification
 await notificationService.createAndSendNotification({
-  userId: new ObjectId(userId),
+  userId,
   title: 'Order Confirmed',
   message: `Your order #${orderNumber} has been confirmed`,
   type: NotificationType.ORDER,
@@ -185,11 +189,7 @@ await notificationService.createAndSendNotification({
 
 // Track order status changes
 async function updateOrderStatus(orderId, newStatus) {
-  const order = await Order.findByIdAndUpdate(
-    orderId,
-    { status: newStatus },
-    { new: true }
-  );
+  const order = await orderRepository.updateById(orderId, { status: newStatus });
 
   await notificationService.sendOrderStatusNotification(
     order.userId,
@@ -227,7 +227,7 @@ import * as deviceTokenUtil from './utils/deviceToken.util';
 
 // Register device when user logs in
 await deviceTokenUtil.registerDevice({
-  userId: new ObjectId(userId),
+  userId,
   fcmToken: deviceToken,
   deviceType: 'web' // or 'android', 'ios'
 });
@@ -266,7 +266,7 @@ import {
   isValidPrice,
   isStrongPassword,
   isValidFCMToken,
-  isValidObjectId
+  isValidUUID
 } from './utils/validation.util';
 
 // Validate email
@@ -285,8 +285,8 @@ if (!isValidPrice(price)) {
   throw new Error('Invalid price format');
 }
 
-// Validate MongoDB ID
-if (!isValidObjectId(productId)) {
+// Validate UUID
+if (!isValidUUID(productId)) {
   throw new Error('Invalid product ID');
 }
 
@@ -308,7 +308,7 @@ import {
 
 // Generate tokens on login
 const { accessToken, refreshToken } = generateTokenPair({
-  userId: user._id.toString(),
+  userId: user.id,
   email: user.email,
   role: user.role
 });
@@ -384,13 +384,9 @@ const { skip, limit: pageLimit } = getPaginationQuery({
   limit: parseInt(limit)
 });
 
-// Query database
-const items = await Model.find()
-  .skip(skip)
-  .limit(pageLimit)
-  .exec();
-
-const total = await Model.countDocuments();
+// Query database using repository
+const items = await repository.find({}, { offset: skip, limit: pageLimit });
+const total = await repository.count();
 
 // Return paginated response
 const response = createPaginatedResponse(
@@ -472,7 +468,7 @@ import { notificationService } from './services/NotificationService';
 describe('NotificationService', () => {
   it('should create and send notification', async () => {
     const result = await notificationService.createAndSendNotification({
-      userId: new ObjectId(),
+      userId: crypto.randomUUID(),
       title: 'Test',
       message: 'Test message',
       type: NotificationType.SYSTEM,
@@ -505,10 +501,11 @@ describe('NotificationService', () => {
 
 ## Troubleshooting
 
-### MongoDB Connection Failed
-- Verify MONGODB_URI is correct
+### Supabase Database Connection Failed
+- Verify SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY are correct
 - Check network connectivity
-- Ensure MongoDB credentials are valid
+- Ensure Supabase project credentials are valid
+- Check Row Level Security (RLS) policies
 - Check firewall rules
 
 ### Firebase Initialization Failed

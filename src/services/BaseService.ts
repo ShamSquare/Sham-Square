@@ -1,105 +1,49 @@
-import type {
-  Document,
-  FilterQuery,
-  ProjectionType,
-  QueryOptions,
-  UpdateQuery,
-} from 'mongoose';
 import type { BaseRepository } from '../database/repositories/BaseRepository.ts';
 
-type CreatePayload<T extends Document> = Omit<T, keyof Document> & Record<string, unknown>;
-type LeanResult<T extends Document> = Omit<T, keyof Document> & {
-  _id: T extends { _id: infer U } ? U : unknown;
-};
-
-export abstract class BaseService<T extends Document> {
+export abstract class BaseService<T extends Record<string, any>> {
   protected readonly repository: BaseRepository<T>;
 
   constructor(repository: BaseRepository<T>) {
     this.repository = repository;
   }
 
-  create(data: CreatePayload<T>): Promise<T> {
+  async create(data: Partial<T>): Promise<T> {
     return this.repository.create(data);
   }
 
-  getById(
-    id: string,
-    projection?: ProjectionType<T>,
-    options?: QueryOptions
-  ): Promise<T | null> {
-    return this.repository.findById(id, projection, options);
+  async getById(id: string): Promise<T | null> {
+    return this.repository.findById(id);
   }
 
-  getByIdLean(
-    id: string,
-    projection?: ProjectionType<T>,
-    options?: QueryOptions
-  ): Promise<LeanResult<T> | null> {
-    return this.repository.findByIdLean(id, projection, options);
+  async findOne(filter: Partial<T>): Promise<T | null> {
+    return this.repository.findOne(filter);
   }
 
-  findOne(
-    filter: FilterQuery<T>,
-    projection?: ProjectionType<T>,
-    options?: QueryOptions
-  ): Promise<T | null> {
-    return this.repository.findOne(filter, projection, options);
+  async find(filter?: Partial<T>, options?: { limit?: number; offset?: number; orderBy?: string; orderDir?: 'asc' | 'desc' }): Promise<T[]> {
+    return this.repository.find(filter, options);
   }
 
-  findOneLean(
-    filter: FilterQuery<T>,
-    projection?: ProjectionType<T>,
-    options?: QueryOptions
-  ): Promise<LeanResult<T> | null> {
-    return this.repository.findOneLean(filter, projection, options);
+  async updateById(id: string, data: Partial<T>): Promise<T | null> {
+    return this.repository.updateById(id, data);
   }
 
-  find(
-    filter: FilterQuery<T>,
-    projection?: ProjectionType<T>,
-    options?: QueryOptions
-  ): Promise<T[]> {
-    return this.repository.find(filter, projection, options);
+  async updateOne(filter: Partial<T>, data: Partial<T>): Promise<T | null> {
+    return this.repository.updateOne(filter, data);
   }
 
-  findLean(
-    filter: FilterQuery<T>,
-    projection?: ProjectionType<T>,
-    options?: QueryOptions
-  ): Promise<LeanResult<T>[]> {
-    return this.repository.findLean(filter, projection, options);
+  async deleteById(id: string): Promise<void> {
+    return this.repository.deleteById(id);
   }
 
-  updateById(
-    id: string,
-    update: UpdateQuery<T>,
-    options: QueryOptions = { new: true }
-  ): Promise<T | null> {
-    return this.repository.findOneAndUpdate({ _id: id } as FilterQuery<T>, update, options);
-  }
-
-  updateOne(
-    filter: FilterQuery<T>,
-    update: UpdateQuery<T>,
-    options?: QueryOptions
-  ) {
-    return this.repository.updateOne(filter, update, options);
-  }
-
-  deleteById(id: string) {
-    return this.repository.deleteOne({ _id: id } as FilterQuery<T>);
-  }
-
-  deleteMany(filter: FilterQuery<T>) {
+  async deleteMany(filter: Partial<T>): Promise<void> {
     return this.repository.deleteMany(filter);
   }
 
-  count(filter: FilterQuery<T> = {}) {
+  async count(filter?: Partial<T>): Promise<number> {
     return this.repository.count(filter);
   }
 
-  exists(filter: FilterQuery<T>) {
+  async exists(filter: Partial<T>): Promise<boolean> {
     return this.repository.exists(filter);
   }
 }

@@ -1,9 +1,9 @@
 import { BaseRepository } from './BaseRepository.ts';
-import { ProductReview, type IProductReview } from '../models/index.ts';
+import type { IProductReview } from '../models/index.ts';
 
 export class ProductReviewRepository extends BaseRepository<IProductReview> {
   constructor() {
-    super(ProductReview);
+    super('product_reviews');
   }
 }
 

@@ -62,7 +62,7 @@
  *         required: true
  *         schema:
  *           type: string
- *         description: MongoDB ObjectId
+ *         description: UUID primary key
  *     responses:
  *       200:
  *         description: User found

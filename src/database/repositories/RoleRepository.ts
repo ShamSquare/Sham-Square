@@ -1,9 +1,9 @@
 import { BaseRepository } from './BaseRepository.ts';
-import { Role, type IRole } from '../models/index.ts';
+import type { IRole } from '../models/index.ts';
 
 export class RoleRepository extends BaseRepository<IRole> {
   constructor() {
-    super(Role);
+    super('roles');
   }
 }
 

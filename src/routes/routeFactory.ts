@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import { asyncHandler } from '../controllers/asyncHandler.ts';
 import type { CrudController } from '../controllers/CrudController.ts';
-import type { Document } from 'mongoose';
 
-export function createCrudRoutes<T extends Document>(controller: CrudController<T>) {
+export function createCrudRoutes<T extends Record<string, any>>(controller: CrudController<T>) {
   const router = Router();
 
   router.get('/', asyncHandler(controller.list.bind(controller)));

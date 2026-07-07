@@ -1,11 +1,8 @@
 import type { Request, Response } from 'express';
-import type { Document, UpdateQuery } from 'mongoose';
 import { BaseController } from './BaseController.ts';
 import type { BaseService } from '../services/BaseService.ts';
 
-type CreatePayload<T extends Document> = Omit<T, keyof Document> & Record<string, unknown>;
-
-export class CrudController<T extends Document> extends BaseController {
+export class CrudController<T extends Record<string, any>> extends BaseController {
   constructor(protected readonly service: BaseService<T>) {
     super();
   }
@@ -24,14 +21,14 @@ export class CrudController<T extends Document> extends BaseController {
   }
 
   async create(req: Request, res: Response) {
-    const created = await this.service.create(req.body as CreatePayload<T>);
+    const created = await this.service.create(req.body);
     return this.sendCreated(res, created);
   }
 
   async update(req: Request, res: Response) {
     const updated = await this.service.updateById(
       req.params.id,
-      req.body as UpdateQuery<T>
+      req.body
     );
     if (!updated) {
       return this.sendError(res, 'Not found', 404);

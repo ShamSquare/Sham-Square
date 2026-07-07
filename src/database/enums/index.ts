@@ -1,6 +1,5 @@
 /**
- * Central enum definitions for AshityShop MongoDB collections.
- * Keep values stable — they are persisted in documents and used by all clients.
+ * Central enum definitions for AshityShop.
  */
 
 export enum RoleName {
@@ -188,7 +187,7 @@ export enum TrackingEventSource {
   CUSTOMER = 'CUSTOMER',
 }
 
-/** Mongoose enum arrays derived from TypeScript enums */
+/** Enum arrays derived from TypeScript enums */
 export const ROLE_NAME_VALUES = Object.values(RoleName);
 export const USER_STATUS_VALUES = Object.values(UserStatus);
 export const DEVICE_PLATFORM_VALUES = Object.values(DevicePlatform);

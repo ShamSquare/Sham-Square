@@ -9,7 +9,7 @@
 
 ```bash
 # 1. Install dependencies
-npm install mongoose jsonwebtoken cloudinary firebase-admin dotenv express cors
+npm install @supabase/supabase-js jsonwebtoken cloudinary firebase-admin dotenv express cors
 
 # 2. Setup environment
 cp .env.example .env
@@ -83,7 +83,7 @@ await registerDevice({ userId, fcmToken, deviceType: 'web' });
 ### Generate JWT Tokens
 ```typescript
 const { accessToken, refreshToken } = generateTokenPair({
-  userId: user._id,
+  userId: user.id,
   email: user.email,
   role: user.role
 });
@@ -105,7 +105,7 @@ const { valid, errors } = isStrongPassword(password);
 ### Handle Pagination
 ```typescript
 const { skip, limit, page } = getPaginationQuery({ page: 1, limit: 20 });
-const items = await Model.find().skip(skip).limit(limit);
+const items = await repository.find({}, { offset: skip, limit });
 res.json(createPaginatedResponse(items, page, limit, total));
 ```
 
@@ -130,7 +130,7 @@ res.status(400).json(
 ### UserDevice Fields
 ```typescript
 {
-  userId: ObjectId,
+  userId: uuid,
   fcmToken: string,
   deviceType: 'android' | 'web' | 'ios',
   isActive: boolean,
@@ -142,7 +142,7 @@ res.status(400).json(
 ### Notification Fields
 ```typescript
 {
-  userId: ObjectId,
+  userId: uuid,
   title: string,
   body: string,
   type: 'ORDER' | 'DELIVERY' | 'PROMOTION' | 'SYSTEM' | 'SUPPORT' | 'PAYMENT',
@@ -161,8 +161,8 @@ res.status(400).json(
 envConfig.app.port           // 5000
 envConfig.app.nodeEnv        // 'development'
 
-// Database
-envConfig.database.mongodbUri
+// Database (Supabase)
+envConfig.supabase.url
 
 // JWT
 envConfig.jwt.accessSecret
@@ -254,7 +254,7 @@ expect(CloudinaryService.uploadProductImage).toHaveBeenCalled();
 
 ```typescript
 try {
-  const user = await User.findById(userId);
+  const user = await userRepository.findById(userId);
   if (!user) throwNotFound('User');
   
   const result = await notificationService.sendPushNotification(...);
@@ -328,18 +328,14 @@ async function handleOrderDelivery(req, res) {
     const { orderId, userId } = req.body;
     
     // Validate input
-    if (!isValidObjectId(orderId)) {
+    if (!isValidUUID(orderId)) {
       return res.status(400).json(
         createErrorResponse(ErrorCode.BAD_REQUEST, 'Invalid order ID')
       );
     }
     
     // Update order
-    const order = await Order.findByIdAndUpdate(
-      orderId,
-      { status: 'DELIVERED' },
-      { new: true }
-    );
+    const order = await orderRepository.updateById(orderId, { status: 'DELIVERED' });
     
     if (!order) throwNotFound('Order');
     
@@ -348,7 +344,7 @@ async function handleOrderDelivery(req, res) {
       order.userId,
       order.orderNumber,
       'DELIVERED',
-      order._id
+      order.id
     );
     
     // Log event

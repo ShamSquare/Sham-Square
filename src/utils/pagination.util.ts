@@ -84,7 +84,7 @@ export const createPaginatedResponse = <T>(
 };
 
 /**
- * Get pagination query for MongoDB
+ * Get pagination query for database
  */
 export const getPaginationQuery = (
   params: IPaginationParams

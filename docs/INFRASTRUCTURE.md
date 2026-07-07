@@ -9,7 +9,7 @@
 
 ## Overview
 
-This infrastructure layer provides production-ready configuration, services, and utilities for the AshityShop E-Commerce platform built with Node.js, Express.js, MongoDB, and Firebase.
+This infrastructure layer provides production-ready configuration, services, and utilities for the AshityShop E-Commerce platform built with Node.js, Express.js, Supabase PostgreSQL, and Firebase.
 
 ## Project Structure
 
@@ -17,7 +17,8 @@ This infrastructure layer provides production-ready configuration, services, and
 src/
 ├── config/                  # Configuration modules
 │   ├── env.config.ts       # Environment variables management
-│   ├── database.config.ts  # MongoDB/Mongoose configuration
+│   ├── database.config.ts  # Database placeholder (see supabase.config.ts)
+│   ├── supabase.config.ts  # Supabase PostgreSQL configuration
 │   ├── cloudinary.config.ts # Image hosting configuration
 │   ├── firebase.config.ts  # Firebase Admin SDK initialization
 │   ├── jwt.config.ts       # JWT token configuration
@@ -67,31 +68,29 @@ Manages all environment variables with validation.
 import { envConfig } from './config';
 
 console.log(envConfig.app.port);
-console.log(envConfig.database.mongodbUri);
+console.log(envConfig.supabase.url);
 ```
 
-### 2. Database Configuration (`database.config.ts`)
+### 2. Database Configuration (`supabase.config.ts`)
 
-Handles MongoDB connection setup and lifecycle management.
+Handles Supabase PostgreSQL connection setup via `@supabase/supabase-js`.
 
 **Features:**
-- Automatic connection pooling
-- Connection event handling
-- Graceful disconnect
+- Anon client for public queries (RLS enforced)
+- Service role client for admin/server-side operations
+- Health check endpoint
 - Singleton pattern
 
 **Usage:**
 ```typescript
-import databaseConfig from './config/database.config';
+import supabaseConfig from './config/supabase.config';
 
-// Initialize on app startup
-await databaseConfig.initialize();
+// Get Supabase clients
+const client = supabaseConfig.getClient();       // anon (RLS)
+const admin = supabaseConfig.getAdminClient();   // service role
 
-// Check connection status
-const connected = databaseConfig.isConnectedToDatabase();
-
-// Disconnect on app shutdown
-await databaseConfig.disconnect();
+// Health check
+const healthy = await supabaseConfig.healthCheck();
 ```
 
 ### 3. Cloudinary Configuration (`cloudinary.config.ts`)
@@ -226,7 +225,7 @@ import { notificationService } from './services/NotificationService';
 
 // Send notification with both database save and push
 await notificationService.createAndSendNotification({
-  userId: new ObjectId('...'),
+  userId: '...',
   title: 'Order Confirmed',
   message: 'Your order has been confirmed',
   type: NotificationType.ORDER,
@@ -258,7 +257,7 @@ const { notifications, unreadCount } = await notificationService.getUserNotifica
 Manages FCM tokens for push notifications.
 
 **Fields:**
-- `userId` (ObjectId) - Reference to User
+- `userId` (UUID) - Reference to User
 - `fcmToken` (String) - Firebase Cloud Messaging token
 - `deviceType` (Enum: android, web, ios)
 - `isActive` (Boolean) - Active status
@@ -289,12 +288,12 @@ const devices = await UserDeviceModel.find({
 Stores all notifications in the database.
 
 **Fields:**
-- `userId` (ObjectId) - User who receives notification
+- `userId` (UUID) - User who receives notification
 - `title` (String) - Notification title
 - `message` (String) - Notification body
 - `type` (Enum) - Notification type
 - `isRead` (Boolean) - Read status
-- `metadata` (Mixed) - Additional data
+- `metadata` (JSONB) - Additional data
 - `createdAt` (Date)
 
 **Notification Types:**
@@ -332,7 +331,7 @@ Common validation functions for user input.
 - `isValidPrice()` - Price validation
 - `isStrongPassword()` - Password strength check
 - `isValidFCMToken()` - FCM token validation
-- `isValidObjectId()` - MongoDB ObjectId validation
+- `isValidUUID()` - UUID validation
 - And 10+ more validators
 
 **Usage:**
@@ -478,7 +477,7 @@ Pagination helper functions.
 import { getPaginationQuery, createPaginatedResponse } from './utils/pagination.util';
 
 const { skip, limit, page } = getPaginationQuery({ page: 1, limit: 20 });
-const items = await Model.find().skip(skip).limit(limit);
+const items = await repository.find({}, { offset: skip, limit });
 const response = createPaginatedResponse(items, page, limit, totalCount);
 ```
 
@@ -510,8 +509,9 @@ const response = createPaginatedResponse(items, page, limit, totalCount);
 - Store URLs and publicIds only
 
 ### 6. Database
-- Use connection pooling
-- Handle connection events
+- Use repository pattern for data access
+- Leverage Row Level Security (RLS) for multi-tenant isolation
+- Handle connection health checks
 - Implement proper error handling
 
 ### 7. Notifications
@@ -530,27 +530,27 @@ const response = createPaginatedResponse(items, page, limit, totalCount);
 2. **On Application Startup**
    ```typescript
    // Initialize configs
-   await databaseConfig.initialize();
-   cloudinaryConfig.initialize();
-   firebaseConfig.initialize();
+    await connectDatabase();
+    cloudinaryConfig.initialize();
+    firebaseConfig.initialize();
    ```
 
 3. **On Application Shutdown**
    ```typescript
-   await databaseConfig.disconnect();
+    await disconnectDatabase();
    ```
 
 ## Dependencies
 
 Install required packages:
 ```bash
-npm install mongoose jsonwebtoken cloudinary firebase-admin dotenv express cors
+npm install @supabase/supabase-js jsonwebtoken cloudinary firebase-admin dotenv express cors
 npm install --save-dev @types/node @types/express
 ```
 
 ## Additional Resources
 
-- MongoDB Documentation: https://docs.mongodb.com
+- Supabase Documentation: https://supabase.com/docs
 - Firebase Cloud Messaging: https://firebase.google.com/docs/cloud-messaging
 - Cloudinary Documentation: https://cloudinary.com/documentation
 - Express.js: https://expressjs.com

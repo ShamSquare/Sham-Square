@@ -1,15 +1,9 @@
-/**
- * Device Token Management Utility
- * Handle FCM token registration, updates, and cleanup
- */
-
-import { Types } from 'mongoose';
-import { UserDevice as UserDeviceModel } from '../database/models/index.ts';
+import { userDeviceRepository } from '../database/repositories/index.ts';
 import type { DeviceType } from '../database/models/UserDevice.ts';
 import logger from './logger.util.ts';
 
 export interface IRegisterDevicePayload {
-  userId: Types.ObjectId;
+  userId: string;
   fcmToken: string;
   deviceType: DeviceType;
 }
@@ -20,17 +14,13 @@ export interface IDeviceTokenResult {
   deviceId?: string;
 }
 
-/**
- * Register or update user device
- */
 export const registerDevice = async (
   payload: IRegisterDevicePayload
 ): Promise<IDeviceTokenResult> => {
   try {
     const { userId, fcmToken, deviceType } = payload;
 
-    // Check if device already exists
-    const existingDevice = await UserDeviceModel.findOne({
+    const existingDevice = await userDeviceRepository.findOne({
       userId,
       fcmToken,
     });
@@ -38,20 +28,14 @@ export const registerDevice = async (
     let device;
 
     if (existingDevice) {
-      // Update existing device
-      device = await UserDeviceModel.findByIdAndUpdate(
-        existingDevice._id,
-        {
-          deviceType,
-          isActive: true,
-        },
-        { new: true }
-      );
+      device = await userDeviceRepository.updateById(existingDevice.id, {
+        deviceType,
+        isActive: true,
+      });
 
       logger.info(`Device updated for user: ${userId}`);
     } else {
-      // Create new device
-      device = await UserDeviceModel.create({
+      device = await userDeviceRepository.create({
         userId,
         fcmToken,
         deviceType,
@@ -61,18 +45,18 @@ export const registerDevice = async (
       logger.info(`New device registered for user: ${userId}`);
     }
 
-if (!device) {
-  return {
-    success: false,
-    message: 'Failed to create/update device',
-  };
-}
+    if (!device) {
+      return {
+        success: false,
+        message: 'Failed to create/update device',
+      };
+    }
 
-return {
-  success: true,
-  message: 'Device registered successfully',
-  deviceId: device._id.toString(),
-};
+    return {
+      success: true,
+      message: 'Device registered successfully',
+      deviceId: device.id,
+    };
   } catch (error) {
     logger.error('Error registering device', error);
     return {
@@ -82,23 +66,18 @@ return {
   }
 };
 
-/**
- * Unregister device (deactivate)
- */
 export const unregisterDevice = async (fcmToken: string): Promise<IDeviceTokenResult> => {
   try {
-    const result = await UserDeviceModel.findOneAndUpdate(
-      { fcmToken },
-      { isActive: false },
-      { new: true }
-    );
+    const device = await userDeviceRepository.findOne({ fcmToken });
 
-    if (!result) {
+    if (!device) {
       return {
         success: false,
         message: 'Device not found',
       };
     }
+
+    await userDeviceRepository.updateById(device.id, { isActive: false });
 
     logger.info(`Device unregistered: ${fcmToken}`);
 
@@ -115,12 +94,9 @@ export const unregisterDevice = async (fcmToken: string): Promise<IDeviceTokenRe
   }
 };
 
-/**
- * Get all active FCM tokens for a user
- */
-export const getUserFCMTokens = async (userId: Types.ObjectId): Promise<string[]> => {
+export const getUserFCMTokens = async (userId: string): Promise<string[]> => {
   try {
-    const devices = await UserDeviceModel.find({
+    const devices = await userDeviceRepository.find({
       userId,
       isActive: true,
     });
@@ -132,11 +108,8 @@ export const getUserFCMTokens = async (userId: Types.ObjectId): Promise<string[]
   }
 };
 
-/**
- * Get user devices with filters
- */
 export const getUserDevices = async (
-  userId: Types.ObjectId,
+  userId: string,
   isActive?: boolean
 ) => {
   try {
@@ -146,7 +119,10 @@ export const getUserDevices = async (
       query.isActive = isActive;
     }
 
-    const devices = await UserDeviceModel.find(query).sort({ createdAt: -1 });
+    const devices = await userDeviceRepository.find(query, {
+      orderBy: 'createdAt',
+      orderDir: 'desc',
+    });
 
     return {
       success: true,
@@ -163,19 +139,18 @@ export const getUserDevices = async (
   }
 };
 
-/**
- * Delete user device
- */
-export const deleteDevice = async (deviceId: Types.ObjectId): Promise<IDeviceTokenResult> => {
+export const deleteDevice = async (deviceId: string): Promise<IDeviceTokenResult> => {
   try {
-    const result = await UserDeviceModel.findByIdAndDelete(deviceId);
+    const device = await userDeviceRepository.findById(deviceId);
 
-    if (!result) {
+    if (!device) {
       return {
         success: false,
         message: 'Device not found',
       };
     }
+
+    await userDeviceRepository.deleteById(deviceId);
 
     logger.info(`Device deleted: ${deviceId}`);
 
@@ -192,21 +167,22 @@ export const deleteDevice = async (deviceId: Types.ObjectId): Promise<IDeviceTok
   }
 };
 
-/**
- * Clear inactive devices for a user
- */
-export const clearInactiveDevices = async (userId: Types.ObjectId): Promise<any> => {
+export const clearInactiveDevices = async (userId: string): Promise<any> => {
   try {
-    const result = await UserDeviceModel.deleteMany({
+    const inactiveDevices = await userDeviceRepository.find({
       userId,
       isActive: false,
     });
 
-    logger.info(`Cleared ${result.deletedCount} inactive devices for user: ${userId}`);
+    for (const device of inactiveDevices) {
+      await userDeviceRepository.deleteById(device.id);
+    }
+
+    logger.info(`Cleared ${inactiveDevices.length} inactive devices for user: ${userId}`);
 
     return {
       success: true,
-      deletedCount: result.deletedCount,
+      deletedCount: inactiveDevices.length,
     };
   } catch (error) {
     logger.error('Error clearing inactive devices', error);
@@ -217,23 +193,25 @@ export const clearInactiveDevices = async (userId: Types.ObjectId): Promise<any>
   }
 };
 
-/**
- * Cleanup expired devices (not accessed in X days)
- */
 export const cleanupExpiredDevices = async (daysInactive: number = 30): Promise<any> => {
   try {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysInactive);
 
-    const result = await UserDeviceModel.deleteMany({
-      updatedAt: { $lt: cutoffDate },
-    });
+    const allDevices = await userDeviceRepository.find();
+    const expiredDevices = allDevices.filter(
+      (d) => new Date(d.updatedAt) < cutoffDate
+    );
 
-    logger.info(`Cleaned up ${result.deletedCount} expired devices`);
+    for (const device of expiredDevices) {
+      await userDeviceRepository.deleteById(device.id);
+    }
+
+    logger.info(`Cleaned up ${expiredDevices.length} expired devices`);
 
     return {
       success: true,
-      deletedCount: result.deletedCount,
+      deletedCount: expiredDevices.length,
     };
   } catch (error) {
     logger.error('Error cleaning up expired devices', error);
@@ -244,23 +222,18 @@ export const cleanupExpiredDevices = async (daysInactive: number = 30): Promise<
   }
 };
 
-/**
- * Get device statistics
- */
 export const getDeviceStatistics = async () => {
   try {
-    const totalDevices = await UserDeviceModel.countDocuments();
-    const activeDevices = await UserDeviceModel.countDocuments({ isActive: true });
-    const inactiveDevices = await UserDeviceModel.countDocuments({ isActive: false });
-
-    const devicesByType = await UserDeviceModel.aggregate([
-      {
-        $group: {
-          _id: '$deviceType',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
+    const allDevices = await userDeviceRepository.find();
+    const totalDevices = allDevices.length;
+    const activeDevices = allDevices.filter((d) => d.isActive).length;
+    const inactiveDevices = totalDevices - activeDevices;
+    const devicesByType = Object.entries(
+      allDevices.reduce((acc: Record<string, number>, d) => {
+        acc[d.deviceType] = (acc[d.deviceType] || 0) + 1;
+        return acc;
+      }, {})
+    ).map(([deviceType, count]) => ({ deviceType, count }));
 
     return {
       success: true,

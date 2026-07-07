@@ -1,9 +1,9 @@
 import { BaseRepository } from './BaseRepository.ts';
-import { Coupon, type ICoupon } from '../models/index.ts';
+import type { ICoupon } from '../models/index.ts';
 
 export class CouponRepository extends BaseRepository<ICoupon> {
   constructor() {
-    super(Coupon);
+    super('coupons');
   }
 }
 

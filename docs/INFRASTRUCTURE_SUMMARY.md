@@ -20,7 +20,7 @@ This document summarizes all infrastructure and configuration files created for 
 - **Usage**: Copy to `.env` and fill with actual values
 - **Variables**:
   - App: PORT, NODE_ENV
-  - Database: MONGODB_URI
+  - Database: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
   - JWT: ACCESS_SECRET, REFRESH_SECRET, EXPIRES
   - Cloudinary: CLOUD_NAME, API_KEY, API_SECRET
   - Firebase: PROJECT_ID, PRIVATE_KEY, CLIENT_EMAIL
@@ -43,14 +43,17 @@ This document summarizes all infrastructure and configuration files created for 
 - **Usage**: Import for accessing any environment variable
 
 #### `database.config.ts`
-- **Purpose**: MongoDB connection setup and lifecycle management
+- **Purpose**: Database connection placeholder (backward compatibility)
+- **Note**: Supabase is used via `supabase.config.ts` (see below)
+
+#### `supabase.config.ts` (NEW)
+- **Purpose**: Supabase PostgreSQL connection setup
 - **Key Features**:
-  - Connection pooling (max 10, min 5)
-  - Event handlers (connected, disconnected, error, reconnected)
+  - Client initialization (anon + service role)
+  - Health check endpoint
   - Singleton pattern
-  - Graceful disconnect
-- **Methods**: `initialize()`, `getConnection()`, `isConnectedToDatabase()`, `disconnect()`
-- **Usage**: Call `initialize()` on app startup, `disconnect()` on shutdown
+- **Methods**: `getClient()`, `getAdminClient()`, `healthCheck()`
+- **Usage**: Use `getClient()` for public queries, `getAdminClient()` for server-side operations
 
 #### `cloudinary.config.ts`
 - **Purpose**: Cloudinary API initialization
@@ -91,15 +94,14 @@ This document summarizes all infrastructure and configuration files created for 
 #### `UserDevice.ts` (NEW)
 - **Purpose**: Store FCM tokens for push notifications
 - **Fields**:
-  - userId: ObjectId (indexed)
-  - fcmToken: String (unique, sparse)
+  - userId: UUID (indexed)
+  - fcmToken: String (unique)
   - deviceType: Enum (android, web, ios)
   - isActive: Boolean (indexed)
-  - createdAt, updatedAt: Date
+  - createdAt, updatedAt: Timestamp
 - **Indexes**:
   - userId + isActive
   - fcmToken + isActive
-- **Pre-save Hook**: Deactivates duplicate FCM tokens
 - **Purpose**: Multi-device support for push notifications
 
 #### `Notification.ts` (EXISTING - Already Enhanced)
@@ -186,7 +188,7 @@ This document summarizes all infrastructure and configuration files created for 
 #### `validation.util.ts` (NEW)
 - **Purpose**: Common input validation functions
 - **Validators** (15+ functions):
-  - Email, URL, phone, ObjectId, FCM token
+  - Email, URL, phone, UUID, FCM token
   - Password strength
   - File size and type
   - Prices, discounts, coupons
@@ -316,7 +318,7 @@ This document summarizes all infrastructure and configuration files created for 
 
 | Category | Count | Files |
 |----------|-------|-------|
-| Config Modules | 5 | env.config, database.config, cloudinary.config, firebase.config, jwt.config |
+| Config Modules | 6 | env.config, database.config, supabase.config, cloudinary.config, firebase.config, jwt.config |
 | Services | 3 | CloudinaryService, FirebaseService, NotificationService (enhanced) |
 | Utilities | 9 | logger, validation, fileUpload, jwt, error, constants, deviceToken, pagination, index |
 | Documentation | 2 | INFRASTRUCTURE.md, SETUP_GUIDE.md |
@@ -348,10 +350,10 @@ This document summarizes all infrastructure and configuration files created for 
 - Service initialization
 
 ### 2. Database Integration ✅
-- MongoDB connection pooling
-- Connection lifecycle management
+- Supabase PostgreSQL connection
+- Anon + service role client setup
+- Health check monitoring
 - Graceful shutdown handling
-- Event-based connection monitoring
 
 ### 3. Image Management ✅
 - Cloudinary integration
@@ -446,7 +448,7 @@ This document summarizes all infrastructure and configuration files created for 
 - [x] CORS ready
 
 ### ✅ Scalability
-- [x] Database connection pooling
+- [x] Database connection management
 - [x] Batch operations
 - [x] Pagination support
 - [x] Cleanup utilities
@@ -463,7 +465,7 @@ This document summarizes all infrastructure and configuration files created for 
 
 1. **Install Dependencies**
    ```bash
-   npm install mongoose jsonwebtoken cloudinary firebase-admin dotenv express cors
+   npm install @supabase/supabase-js jsonwebtoken cloudinary firebase-admin dotenv express cors
    npm install --save-dev @types/node @types/express
    ```
 

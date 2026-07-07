@@ -1,14 +1,14 @@
-# AshityShop — MongoDB Database Architecture
+# AshityShop — PostgreSQL Database Architecture
 
 > Production-ready schema design for a multi-channel e-commerce platform (Android, Web, future iOS).  
-> Database name: `ashityshop`
+> Database: Supabase PostgreSQL (`ashityshop`)
 
 ---
 
 ## Table of Contents
 
-1. [Recommended MongoDB Architecture](#1-recommended-mongodb-architecture)
-2. [Collection List](#2-collection-list)
+1. [Recommended PostgreSQL Architecture](#1-recommended-postgresql-architecture)
+2. [Table List](#2-table-list)
 3. [ERD — Entity Relationships](#3-erd--entity-relationships)
 4. [Embedding vs Referencing Decisions](#4-embedding-vs-referencing-decisions)
 5. [Enums](#5-enums)
@@ -20,7 +20,7 @@
 
 ---
 
-## 1. Recommended MongoDB Architecture
+## 1. Recommended PostgreSQL Architecture (Supabase)
 
 ### Deployment Topology
 
@@ -34,25 +34,16 @@
                     │   API Gateway   │
                     └────────┬────────┘
                              │
-         ┌───────────────────┼───────────────────┐
-         │                   │                   │
-  ┌──────▼──────┐    ┌───────▼───────┐   ┌──────▼──────┐
-  │  Write Ops  │    │  Read Ops     │   │  Analytics  │
-  │  (Primary)  │    │  (Secondary)  │   │  (Secondary)│
-  └──────┬──────┘    └───────┬───────┘   └──────┬──────┘
-         │                   │                   │
-         └───────────────────┼───────────────────┘
-                             │
               ┌──────────────▼──────────────┐
-              │   MongoDB Replica Set (3+)  │
-              │   Primary + 2 Secondaries   │
+              │   Supabase PostgreSQL       │
+              │   (Managed Cloud Database)  │
               └──────────────┬──────────────┘
                              │
          ┌───────────────────┼───────────────────┐
          │                   │                   │
   ┌──────▼──────┐    ┌───────▼───────┐   ┌──────▼──────┐
-  │   Change    │    │  Atlas Search │   │  S3/CDN     │
-  │   Streams   │    │  (optional)   │   │  (images)   │
+  │  Realtime   │    │  pg_graphql   │   │  S3/CDN     │
+  │  (WebSockets)│   │  (Auto-API)   │   │  (images)   │
   └─────────────┘    └───────────────┘   └─────────────┘
 ```
 
@@ -60,52 +51,51 @@
 
 | Concern | Recommendation |
 |---------|----------------|
-| **Replica Set** | Minimum 3 nodes (1 primary, 2 secondaries) for HA |
-| **Read Preference** | `primary` for writes/carts/orders/inventory; `secondaryPreferred` for product catalog & banners |
-| **Write Concern** | `w: majority` for orders, payments, inventory updates |
-| **Connection Pool** | 50 max / 5 min per app instance (configured in `connection.ts`) |
-| **Change Streams** | Inventory sync, order status → notifications, analytics pipeline |
-| **Sharding (scale)** | Shard `orders` + `orderItems` by `{ userId: 1, createdAt: 1 }`; shard `notifications` by `userId` |
-| **TTL Indexes** | Expired guest carts, old notifications (optional retention) |
-| **Backup** | Continuous cloud backup + point-in-time recovery |
-| **Transactions** | Use multi-document ACID for: order creation + inventory reservation + cart conversion |
+| **High Availability** | Supabase Pro plan includes automated backups and Point-in-Time Recovery |
+| **Connection Pool** | Supabase provides PgBouncer connection pooling (configured in `supabase.ts`) |
+| **Realtime** | Use Supabase Realtime for order status → notifications, inventory sync |
+| **Row Level Security** | Enforce multi-tenant data isolation via RLS policies on all tables |
+| **Migrations** | Manage schema via SQL migration files in `supabase/migrations/` |
+| **Backup** | Automatic daily backups + Point-in-Time Recovery with Pro plan |
+| **Scaling** | Upgrade compute add-ons as needed; read replicas available on higher tiers |
+| **TTL Cleanup** | Use `pg_cron` or application-level scheduled jobs for expired carts, old notifications |
 
-### Database Separation (Optional at Scale)
+### Schema Organization (Schemas)
 
-| Database | Collections | Purpose |
-|----------|-------------|---------|
-| `ashityshop` | All transactional collections | OLTP |
-| `ashityshop_analytics` | Aggregated metrics (via ETL) | OLAP / dashboards |
-| `ashityshop_audit` | `auditLogs` (move when >100M docs) | Compliance isolation |
+| Schema | Tables | Purpose |
+|--------|--------|---------|
+| `public` | All transactional tables | OLTP |
+| `analytics` | Aggregated metrics (via ETL) | OLAP / dashboards |
+| `audit` | `audit_logs` (partitioned) | Compliance isolation |
 
 ---
 
-## 2. Collection List
+## 2. Table List
 
-| # | Collection | Model File | Soft Delete | Audit Fields | Primary Purpose |
-|---|------------|------------|:-----------:|:------------:|-----------------|
+| # | Table | Model File | Soft Delete | Audit Fields | Primary Purpose |
+|---|-------|------------|:-----------:|:------------:|-----------------|
 | 1 | `roles` | `Role.ts` | ✅ | ✅ | RBAC permissions |
 | 2 | `users` | `User.ts` | ✅ | ✅ | Authentication & profiles |
 | 3 | `addresses` | `Address.ts` | ✅ | ✅ | User shipping/billing addresses |
 | 4 | `categories` | `Category.ts` | ✅ | ✅ | Top-level product taxonomy |
 | 5 | `subcategories` | `SubCategory.ts` | ✅ | ✅ | Second-level taxonomy |
 | 6 | `products` | `Product.ts` | ✅ | ✅ | Product catalog (parent) |
-| 7 | `productVariants` | `ProductVariant.ts` | ✅ | ✅ | SKU, price, inventory |
-| 8 | `productReviews` | `ProductReview.ts` | ✅ | ✅ | Customer reviews |
+| 7 | `product_variants` | `ProductVariant.ts` | ✅ | ✅ | SKU, price, inventory |
+| 8 | `product_reviews` | `ProductReview.ts` | ✅ | ✅ | Customer reviews |
 | 9 | `wishlists` | `Wishlist.ts` | ✅ | ✅ | Saved products (embedded items) |
 | 10 | `carts` | `Cart.ts` | ✅ | ✅ | Active shopping sessions |
-| 11 | `cartItems` | `CartItem.ts` | ✅ | ✅ | Line items (separate for concurrency) |
+| 11 | `cart_items` | `CartItem.ts` | ✅ | ✅ | Line items (separate for concurrency) |
 | 12 | `orders` | `Order.ts` | ✅ | ✅ | Order headers + snapshots |
-| 13 | `orderItems` | `OrderItem.ts` | ✅ | ✅ | Immutable order line items |
-| 14 | `orderTracking` | `OrderTracking.ts` | ❌ | partial | Append-only tracking events |
+| 13 | `order_items` | `OrderItem.ts` | ✅ | ✅ | Immutable order line items |
+| 14 | `order_tracking` | `OrderTracking.ts` | ❌ | partial | Append-only tracking events |
 | 15 | `notifications` | `Notification.ts` | ❌ | ❌ | In-app & push notification log |
 | 16 | `coupons` | `Coupon.ts` | ✅ | ✅ | Discount codes |
 | 17 | `banners` | `Banner.ts` | ✅ | ✅ | Homepage/promo banners |
-| 18 | `supportTickets` | `SupportTicket.ts` | ✅ | ✅ | Customer support |
-| 19 | `auditLogs` | `AuditLog.ts` | ❌ | ❌ | Immutable audit trail |
+| 18 | `support_tickets` | `SupportTicket.ts` | ✅ | ✅ | Customer support |
+| 19 | `audit_logs` | `AuditLog.ts` | ❌ | ❌ | Immutable audit trail |
 | 20 | `settings` | `Setting.ts` | ✅ | ✅ | App configuration key-value store |
 
-**Total: 20 collections** (as specified)
+**Total: 20 tables** (as specified)
 
 ---
 
@@ -178,9 +168,9 @@ coupons        1 ──────< N  carts (optional)
 
 | Symbol | Meaning |
 |--------|---------|
-| `──<` | One-to-many (reference via ObjectId) |
+| `──<` | One-to-many (reference via foreign key UUID) |
 | `}o──o|` | Optional many-to-one |
-| Embedded | Sub-documents inside parent document |
+| Embedded | JSONB columns inside parent row |
 
 ---
 
@@ -188,18 +178,18 @@ coupons        1 ──────< N  carts (optional)
 
 | Data | Strategy | Rationale |
 |------|----------|-----------|
-| **Wishlist items** | **Embed** in `wishlists` | Bounded size (~500 items max); single-user reads; no cross-user queries |
-| **Cart items** | **Reference** (`cartItems` collection) | High write concurrency; atomic per-item updates; guest + auth carts |
-| **Order line items** | **Reference** (`orderItems`) | Unbounded order history; reporting/analytics; partial fulfillment per item |
-| **Order addresses** | **Embed snapshot** in `orders` | Immutable legal record; address book may change after order |
-| **Payment details** | **Embed** in `orders` | 1:1 with order; COD now, gateway fields ready for future |
+| **Wishlist items** | **JSONB** in `wishlists` | Bounded size (~500 items max); single-user reads; no cross-user queries |
+| **Cart items** | **Reference** (`cart_items` table) | High write concurrency; atomic per-item updates; guest + auth carts |
+| **Order line items** | **Reference** (`order_items`) | Unbounded order history; reporting/analytics; partial fulfillment per item |
+| **Order addresses** | **JSONB snapshot** in `orders` | Immutable legal record; address book may change after order |
+| **Payment details** | **JSONB** in `orders` | 1:1 with order; COD now, gateway fields ready for future |
 | **Product variants** | **Reference** | Unbounded variants per product; independent inventory/price updates |
 | **Product reviews** | **Reference** | Unbounded growth; moderation queries; unique index per user+product |
-| **Order tracking events** | **Reference** (append-only docs) | Timeline grows indefinitely; efficient pagination by `createdAt` |
-| **Support ticket messages** | **Embed** (≤200 msgs) | Fast ticket load; migrate to `ticketMessages` collection when exceeded |
-| **User device tokens** | **Embed** in `users` | Small array; needed on every push send; indexed by token |
-| **Role permissions** | **Embed** in `roles` | Permissions always loaded with role; rarely exceed hundreds |
-| **Product rating aggregate** | **Embed** in `products` | Denormalized for listing performance; updated via review events |
+| **Order tracking events** | **Reference** (append-only rows) | Timeline grows indefinitely; efficient pagination by `created_at` |
+| **Support ticket messages** | **JSONB** (≤200 msgs) | Fast ticket load; migrate to `ticket_messages` table when exceeded |
+| **User device tokens** | **JSONB** in `users` | Small array; needed on every push send; indexed by token |
+| **Role permissions** | **JSONB** in `roles` | Permissions always loaded with role; rarely exceed hundreds |
+| **Product rating aggregate** | **JSONB** in `products` | Denormalized for listing performance; updated via review events |
 | **Category → SubCategory** | **Reference** | Subcategories queried independently; admin CRUD separation |
 
 ---
@@ -244,34 +234,34 @@ All enums live in `src/database/enums/index.ts`.
 | `users` | `{ email: 1 }` | unique | Login |
 | `users` | `{ phone: 1 }` | unique, sparse | Phone login |
 | `users` | `{ roleId: 1, status: 1, isDeleted: 1 }` | compound | Admin user lists |
-| `products` | `{ name: text, description: text, tags: text }` | text | Search |
-| `products` | `{ categoryId: 1, subCategoryId: 1, status: 1 }` | compound | Category browsing |
-| `productVariants` | `{ sku: 1 }` | unique | Inventory lookup |
-| `productVariants` | `{ productId: 1, isActive: 1 }` | compound | PDP variant load |
-| `carts` | `{ userId: 1, status: 1 }` | unique, partial | One active cart per user |
-| `cartItems` | `{ cartId: 1, variantId: 1 }` | unique, partial | Upsert cart line |
-| `orders` | `{ orderNumber: 1 }` | unique | Order lookup |
-| `orders` | `{ userId: 1, createdAt: -1 }` | compound | Order history |
-| `orders` | `{ delivery.agentId: 1, status: 1 }` | compound | Delivery app queue |
-| `orderTracking` | `{ orderId: 1, createdAt: -1 }` | compound | Tracking timeline |
-| `notifications` | `{ userId: 1, isRead: 1, createdAt: -1 }` | compound | Notification inbox |
-| `coupons` | `{ code: 1 }` | unique | Coupon validation |
-| `auditLogs` | `{ entityType: 1, entityId: 1, createdAt: -1 }` | compound | Entity audit trail |
+| `products` | `GIN (to_tsvector('english', name || ' ' || description))` | GIN | Full-text search |
+| `products` | `(category_id, sub_category_id, status)` | btree | Category browsing |
+| `product_variants` | `(sku)` | unique btree | Inventory lookup |
+| `product_variants` | `(product_id, is_active)` | btree | PDP variant load |
+| `carts` | `(user_id, status) WHERE status = 'ACTIVE'` | unique partial | One active cart per user |
+| `cart_items` | `(cart_id, variant_id)` | unique btree | Upsert cart line |
+| `orders` | `(order_number)` | unique btree | Order lookup |
+| `orders` | `(user_id, created_at DESC)` | btree | Order history |
+| `orders` | `(delivery_agent_id, status)` | btree | Delivery app queue |
+| `order_tracking` | `(order_id, created_at DESC)` | btree | Tracking timeline |
+| `notifications` | `(user_id, is_read, created_at DESC)` | btree | Notification inbox |
+| `coupons` | `(code)` | unique btree | Coupon validation |
+| `audit_logs` | `(entity_type, entity_id, created_at DESC)` | btree | Entity audit trail |
 
 ### Geospatial Indexes
 
-| Collection | Field | Use Case |
-|------------|-------|----------|
-| `addresses` | `location` | 2dsphere | Delivery zone validation |
-| `users` | `deliveryProfile.currentLocation` | 2dsphere | Nearest delivery agent |
-| `orderTracking` | `location` | 2dsphere | Live delivery map |
+| Table | Field | Index Type | Use Case |
+|-------|-------|------------|----------|
+| `addresses` | `location` | GIST (geometry) | Delivery zone validation |
+| `users` | `delivery_profile.current_location` | GIST (geometry) | Nearest delivery agent |
+| `order_tracking` | `location` | GIST (geometry) | Live delivery map |
 
-### TTL Indexes
+### TTL Cleanup (Application-Level)
 
-| Collection | Field | Condition |
-|------------|-------|-----------|
-| `carts` | `expiresAt` | Guest cart cleanup (`status: EXPIRED`) |
-| `notifications` | `expiresAt` | Optional retention policy |
+| Table | Field | Condition |
+|-------|-------|-----------|
+| `carts` | `expires_at` | Guest cart cleanup (`status: EXPIRED`) via scheduled job |
+| `notifications` | `expires_at` | Optional retention policy via scheduled job |
 
 ---
 
@@ -279,23 +269,23 @@ All enums live in `src/database/enums/index.ts`.
 
 ### Unique Constraints
 
-| Collection | Fields | Notes |
-|------------|--------|-------|
+| Table | Columns | Notes |
+|-------|---------|-------|
 | `roles` | `name` | System role names |
-| `users` | `email` | Case-insensitive via lowercase |
-| `users` | `phone` | Sparse — not all users have phone |
-| `categories` | `slug` | URL-safe |
-| `subcategories` | `categoryId + slug` | Unique within category |
-| `products` | `slug` | Global product URL |
-| `productVariants` | `sku`, `barcode` | Inventory identifiers |
-| `productReviews` | `productId + userId` | One review per user per product |
-| `carts` | `userId + status:ACTIVE` | Partial unique |
-| `cartItems` | `cartId + variantId` | Partial unique |
-| `orders` | `orderNumber` | Human-readable ID |
-| `coupons` | `code` | Uppercase normalized |
-| `supportTickets` | `ticketNumber` | Support reference |
-| `settings` | `key` | Dot-notation config keys |
-| `wishlists` | `userId + name` | Named wishlists |
+| `users` | `email` | UNIQUE index — stored lowercase |
+| `users` | `phone` | UNIQUE nullable — not all users have phone |
+| `categories` | `slug` | UNIQUE — URL-safe |
+| `subcategories` | `(category_id, slug)` | UNIQUE — within category |
+| `products` | `slug` | UNIQUE — global product URL |
+| `product_variants` | `sku`, `barcode` | UNIQUE — inventory identifiers |
+| `product_reviews` | `(product_id, user_id)` | UNIQUE — one review per user per product |
+| `carts` | `(user_id) WHERE status = 'ACTIVE'` | Partial unique index |
+| `cart_items` | `(cart_id, variant_id)` | UNIQUE |
+| `orders` | `order_number` | UNIQUE — human-readable ID |
+| `coupons` | `code` | UNIQUE — uppercase normalized |
+| `support_tickets` | `ticket_number` | UNIQUE — support reference |
+| `settings` | `key` | UNIQUE — dot-notation config keys |
+| `wishlists` | `(user_id, name)` | UNIQUE — named wishlists |
 
 ### Field Validation Highlights
 
@@ -313,31 +303,31 @@ All enums live in `src/database/enums/index.ts`.
 
 ## 8. Soft Delete & Auditing
 
-### Soft Delete (`softDeletePlugin`)
+### Soft Delete
 
-Applied to all collections **except**:
-- `orderTracking` — append-only event log
-- `notifications` — use TTL or hard delete
-- `auditLogs` — immutable, never deleted
+Applied to all tables **except**:
+- `order_tracking` — append-only event log
+- `notifications` — hard delete after TTL
+- `audit_logs` — immutable, never deleted
 
-Fields added: `isDeleted`, `deletedAt`, `deletedBy`
+Columns added: `is_deleted`, `deleted_at`, `deleted_by`
 
-Methods: `softDelete()`, `restore()`, `findWithDeleted()`
+Repositories implement: `softDelete()`, `restore()`, `findWithDeleted()` via the `BaseRepository`.
 
-### Audit Fields (`auditFieldsPlugin`)
+### Audit Fields
 
-Applied to all soft-deletable collections plus transactional collections.
+Applied to all soft-deletable tables plus transactional tables.
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `createdBy` | ObjectId → User | Who created the record |
-| `updatedBy` | ObjectId → User | Last modifier |
-| `createdAt` | Date | Auto (timestamps) |
-| `updatedAt` | Date | Auto (timestamps) |
+| Column | Type | Purpose |
+|--------|------|---------|
+| `created_by` | UUID → users | Who created the record |
+| `updated_by` | UUID → users | Last modifier |
+| `created_at` | Timestamptz | Auto |
+| `updated_at` | Timestamptz | Auto |
 
-### Audit Logs (`auditLogs`)
+### Audit Logs (`audit_logs`)
 
-Separate immutable collection for compliance:
+Separate immutable table for compliance:
 - Captures before/after snapshots on critical entities
 - Stores IP, user agent, request ID
 - Never soft-deleted; consider archival to cold storage after 2 years
@@ -348,50 +338,52 @@ Separate immutable collection for compliance:
 
 ### Payment Gateways
 
-`orders.payment` embeds:
-```javascript
+`orders.payment` stores as JSONB:
+```json
 {
-  method: 'COD',           // extend to STRIPE, PAYPAL, RAZORPAY
-  status: 'PENDING',
-  transactionId: null,
-  gatewayResponse: {},     // Mixed — store raw gateway payload
-  paidAt, refundedAt, refundAmount
+  "method": "COD",           // extend to STRIPE, PAYPAL, RAZORPAY
+  "status": "PENDING",
+  "transaction_id": null,
+  "gateway_response": {},    // JSONB — store raw gateway payload
+  "paid_at": null,
+  "refunded_at": null,
+  "refund_amount": 0
 }
 ```
 
 ### Multi-Vendor Marketplace
 
-Nullable `vendorId` on: `users`, `categories`, `products`, `productVariants`, `cartItems`, `orderItems`, `orders`, `coupons`
+Nullable `vendor_id` on: `users`, `categories`, `products`, `product_variants`, `cart_items`, `order_items`, `orders`, `coupons`
 
-Future collections (not in scope now):
+Future tables (not in scope now):
 - `vendors` — seller profiles, commission rates
-- `vendorPayouts` — settlement records
+- `vendor_payouts` — settlement records
 
 ### Warehouse Management
 
-`productVariants.inventory.warehouseId` and `orderItems.warehouseId` reference future `warehouses` collection.
+`product_variants.inventory.warehouse_id` and `order_items.warehouse_id` reference future `warehouses` table.
 
-Future collections:
+Future tables:
 - `warehouses` — location, capacity
-- `inventoryMovements` — stock in/out audit trail
-- `stockTransfers` — inter-warehouse transfers
+- `inventory_movements` — stock in/out audit trail
+- `stock_transfers` — inter-warehouse transfers
 
 ### Mobile Push Notifications
 
-`users.deviceTokens[]` embeds:
-```javascript
-{ token, platform: 'ANDROID'|'IOS'|'WEB', deviceId, isActive, lastUsedAt }
+`users.device_tokens` stores as JSONB:
+```json
+{ "token": "...", "platform": "ANDROID"|"IOS"|"WEB", "device_id": "...", "is_active": true, "last_used_at": "..." }
 ```
 
-Push delivery tracked via `notifications` collection with `channels: ['PUSH']` and `deliveryStatus`.
+Push delivery tracked via `notifications` table with `channels: ['PUSH']` and `delivery_status`.
 
-### Recommended Additional Collection (when scaling)
+### Recommended Additional Tables (when scaling)
 
-| Collection | Purpose |
-|------------|---------|
-| `couponUsages` | `{ couponId, userId, orderId, usedAt }` — enforce `perUserLimit` |
-| `ticketMessages` | Split from embedded when tickets exceed 200 messages |
-| `refreshTokens` | Separate collection if token rotation volume is high |
+| Table | Purpose |
+|-------|---------|
+| `coupon_usages` | `{ coupon_id, user_id, order_id, used_at }` — enforce `per_user_limit` |
+| `ticket_messages` | Split from JSONB when tickets exceed 200 messages |
+| `refresh_tokens` | Separate table if token rotation volume is high |
 
 ---
 
@@ -400,44 +392,57 @@ Push delivery tracked via `notifications` collection with `channels: ['PUSH']` a
 ```
 src/database/
 ├── index.ts                 # Public exports
-├── connection.ts            # MongoDB connection helper
+├── connection.ts            # Supabase connection helper
+├── supabase.ts              # Supabase client wrappers
 ├── enums/
 │   └── index.ts             # All enum definitions
 ├── plugins/
-│   └── index.ts             # auditFields, softDelete, shared sub-schemas
-└── models/
-    ├── index.ts             # Model barrel export
-    ├── Role.ts
-    ├── User.ts
-    ├── Address.ts
-    ├── Category.ts
-    ├── SubCategory.ts
-    ├── Product.ts
-    ├── ProductVariant.ts
-    ├── ProductReview.ts
-    ├── Wishlist.ts
-    ├── Cart.ts
-    ├── CartItem.ts
-    ├── Order.ts
-    ├── OrderItem.ts
-    ├── OrderTracking.ts
-    ├── Notification.ts
-    ├── Coupon.ts
-    ├── Banner.ts
-    ├── SupportTicket.ts
-    ├── AuditLog.ts
-    └── Setting.ts
+│   └── index.ts             # Shared sub-schemas / interfaces (IAuditFields, ISoftDeleteFields)
+├── models/
+│   ├── index.ts             # Model barrel export
+│   ├── Role.ts
+│   ├── User.ts
+│   ├── Address.ts
+│   ├── Category.ts
+│   ├── SubCategory.ts
+│   ├── Product.ts
+│   ├── ProductVariant.ts
+│   ├── ProductReview.ts
+│   ├── Wishlist.ts
+│   ├── Cart.ts
+│   ├── CartItem.ts
+│   ├── Order.ts
+│   ├── OrderItem.ts
+│   ├── OrderTracking.ts
+│   ├── Notification.ts
+│   ├── Coupon.ts
+│   ├── Banner.ts
+│   ├── SupportTicket.ts
+│   ├── AuditLog.ts
+│   └── Setting.ts
+└── repositories/
+    ├── index.ts             # Repository barrel export
+    ├── BaseRepository.ts    # Generic CRUD (findById, create, updateById, deleteById, count, etc.)
+    ├── UserRepository.ts
+    ├── ProductRepository.ts
+    ├── OrderRepository.ts
+    └── ...
 ```
 
 ### Usage
 
 ```typescript
-import { connectDatabase, User, Product, Order } from './src/database/index.js';
+import { connectDatabase } from './src/database/connection.js';
+import { getAdminClient } from './src/database/supabase.js';
 
-await connectDatabase({ uri: process.env.MONGODB_URI! });
+await connectDatabase();
 
-const products = await Product.find({ status: 'PUBLISHED', isFeatured: true })
-  .sort({ 'rating.average': -1 })
+const { data: products } = await getAdminClient()
+  .from('products')
+  .select('*')
+  .eq('status', 'PUBLISHED')
+  .eq('is_featured', true)
+  .order('rating_average', { ascending: false })
   .limit(20);
 ```
 
