@@ -1876,13 +1876,188 @@
  *       - in: path
  *         name: id
  *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       204:
- *         description: Setting deleted
- *       404:
- *         description: Setting not found
- */
+  *        schema:
+  *          type: string
+  *      responses:
+  *        204:
+  *          description: Setting deleted
+  *        404:
+  *          description: Setting not found
+  *
+  * # WebAuthentication
+  * @openapi
+  * /api/v1/web-auth/register:
+  *   post:
+  *     tags: [WebAuthentication]
+  *     summary: Register a new web user
+  *     requestBody:
+  *       required: true
+  *       content:
+  *         application/json:
+  *           schema:
+  *             type: object
+  *             properties:
+  *               email:
+  *                 type: string
+  *                 format: email
+  *                 example: user@example.com
+  *               password:
+  *                 type: string
+  *                 minLength: 8
+  *                 example: password123
+  *               firstName:
+  *                 type: string
+  *                 example: John
+  *               lastName:
+  *                 type: string
+  *                 example: Doe
+  *         required:
+  *           - email
+  *           - password
+  *           - firstName
+  *           - lastName
+  *     responses:
+  *       201:
+  *         description: User registered successfully
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/WebAuthResponse'
+  *       400:
+  *         description: Invalid input
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       409:
+  *         description: Email already exists
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       500:
+  *         description: Server error
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *
+  * # WebAuthentication
+  * @openapi
+  * /api/v1/web-auth/login:
+  *   post:
+  *     tags: [WebAuthentication]
+  *     summary: Login web user
+  *     requestBody:
+  *       required: true
+  *       content:
+  *         application/json:
+  *           schema:
+  *             type: object
+  *             properties:
+  *               email:
+  *                 type: string
+  *                 format: email
+  *                 example: user@example.com
+  *               password:
+  *                 type: string
+  *                 example: password123
+  *         required:
+  *           - email
+  *           - password
+  *     responses:
+  *       200:
+  *         description: Login successful
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/WebAuthResponse'
+  *       400:
+  *         description: Invalid credentials
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       404:
+  *         description: User not found
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       500:
+  *         description: Server error
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *
+  * # WebAuthentication
+  * @openapi
+  * /api/v1/web-auth/me:
+  *   get:
+  *     tags: [WebAuthentication]
+  *     summary: Get current authenticated web user
+  *     security:
+  *       - bearerAuth: []
+  *     responses:
+  *       200:
+  *         description: User profile retrieved successfully
+  *         content:
+  *           application/json:
+  *             schema:
+  *               type: object
+  *               properties:
+  *                 success:
+  *                   type: boolean
+  *                   example: true
+  *                 data:
+  *                   $ref: '#/components/schemas/WebUserProfile'
+  *       401:
+  *         description: Unauthorized
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       404:
+  *         description: User not found
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       500:
+  *         description: Server error
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *
+  * # WebAuthentication
+  * @openapi
+  * /api/v1/web-auth/logout:
+  *   post:
+  *     tags: [WebAuthentication]
+  *     summary: Logout web user
+  *     security:
+  *       - bearerAuth: []
+  *     responses:
+  *       200:
+  *         description: Logout successful
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/AuthMessageResponse'
+  *       401:
+  *         description: Unauthorized
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       500:
+  *         description: Server error
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  */
 
 export {};

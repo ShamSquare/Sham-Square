@@ -855,4 +855,66 @@ export const schemas: Record<string, object> = {
       isActive: { type: 'boolean' },
     },
   },
+
+  WebUser: {
+    type: 'object',
+    properties: {
+      _id: { type: 'string', description: 'Web user UUID' },
+      email: { type: 'string', format: 'email', maxLength: 254, example: 'user@example.com' },
+      firstName: { type: 'string', maxLength: 64, example: 'John' },
+      lastName: { type: 'string', maxLength: 64, example: 'Doe' },
+      avatar: { type: 'string', nullable: true },
+      phone: { type: 'string', maxLength: 20, nullable: true },
+      role: { type: 'string', enum: ['USER'], example: 'USER' },
+      status: { type: 'string', enum: ['ACTIVE'], example: 'ACTIVE' },
+      emailVerified: { type: 'boolean' },
+      lastLoginAt: { type: 'string', format: 'date-time', nullable: true },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+    },
+    required: ['email', 'passwordHash', 'firstName', 'lastName'],
+  },
+
+  WebAuthResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      data: {
+        type: 'object',
+        properties: {
+          user: { $ref: '#/components/schemas/WebUser' },
+          token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' },
+        },
+        required: ['user', 'token'],
+      },
+    },
+    required: ['success', 'data'],
+  },
+
+  WebUserProfile: {
+    type: 'object',
+    properties: {
+      _id: { type: 'string' },
+      email: { type: 'string', format: 'email', example: 'user@example.com' },
+      firstName: { type: 'string', maxLength: 64, example: 'John' },
+      lastName: { type: 'string', maxLength: 64, example: 'Doe' },
+      avatar: { type: 'string', nullable: true },
+      phone: { type: 'string', nullable: true },
+      role: { type: 'string', enum: ['USER'] },
+      status: { type: 'string', enum: ['ACTIVE'] },
+      emailVerified: { type: 'boolean' },
+      lastLoginAt: { type: 'string', format: 'date-time', nullable: true },
+      createdAt: { type: 'string', format: 'date-time' },
+    },
+    required: ['_id', 'email', 'firstName', 'lastName'],
+  },
+
+  AuthMessageResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      message: { type: 'string', example: 'Logged out successfully' },
+    },
+    required: ['success', 'message'],
+  },
 };
