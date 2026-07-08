@@ -17,7 +17,7 @@ export class NotificationController extends CrudController<INotification> {
       realtimeService.emitPublic('notification:created', created);
     }
 
-    return res.status(201).json({ success: true, data: created });
+    return this.sendCreated(res, created);
   }
 }
 

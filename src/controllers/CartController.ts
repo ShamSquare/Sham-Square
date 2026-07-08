@@ -2,19 +2,18 @@ import { CrudController } from './CrudController.ts';
 import { cartService, notificationService } from '../services/index.ts';
 import type { ICart } from '../database/models/index.ts';
 import { cartRepository, cartItemRepository, orderRepository, orderItemRepository } from '../database/repositories/index.ts';
-import { OrderStatus } from '../database/enums/index.ts';
+import { OrderStatus, CartStatus } from '../database/enums/index.ts';
 import { AppError } from '../utils/app-error.util.ts';
 import { realtimeService } from '../services/RealtimeService.ts';
-
-type AuthReq = import('../middlewares/auth.middleware.ts').AuthRequest;
+import { BaseController } from './BaseController.ts';
 
 export class CartController extends CrudController<ICart> {
   constructor() {
     super(cartService);
   }
 
-  async convertActive(req: AuthReq, res: any) {
-    const userId = req.user?.userId;
+  async convertActive(req: any, res: any) {
+    const userId = (req as any).user?.userId;
     if (!userId) throw new AppError('Unauthorized', 401);
 
     const payment = req.body?.payment || { method: 'COD' };
@@ -55,13 +54,12 @@ export class CartController extends CrudController<ICart> {
     }
 
     await cartRepository.updateById(cart.id, {
-      status: 'CONVERTED' as any,
+      status: CartStatus.CONVERTED,
       convertedOrderId: createdOrder.id,
     });
 
-    res.status(201).json({ success: true, data: createdOrder });
     realtimeService.emitToUser(String(userId), 'cart:updated', {
-      status: 'CONVERTED',
+      status: CartStatus.CONVERTED,
       orderId: createdOrder.id,
     });
     realtimeService.emitToUser(String(userId), 'order:created', createdOrder);
@@ -77,6 +75,8 @@ export class CartController extends CrudController<ICart> {
     } catch (notificationError) {
       // If notification fails, keep order creation intact.
     }
+
+    return this.sendCreated(res, createdOrder);
   }
 }
 

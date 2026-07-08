@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import cloudinaryService, { ImageFolder } from '../services/CloudinaryService.ts';
 import { AppError } from '../utils/app-error.util.ts';
+import { BaseController } from './BaseController.ts';
 
-export class UploadController {
+export class UploadController extends BaseController {
   async uploadByUrl(req: Request, res: Response) {
     const { fileUrl, folder = 'users', resourceId } = req.body as any;
     if (!fileUrl) throw new AppError('Missing fileUrl', 400);
@@ -19,7 +20,7 @@ export class UploadController {
 
     const result = await cloudinaryService.uploadImage(fileUrl, target, resourceId ? String(resourceId) : undefined);
 
-    res.json({ success: true, data: result });
+    return this.sendSuccess(res, result);
   }
 }
 

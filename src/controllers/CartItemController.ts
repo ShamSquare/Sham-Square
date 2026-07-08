@@ -12,22 +12,22 @@ export class CartItemController extends CrudController<ICartItem> {
   async create(req: any, res: any) {
     const created = await cartItemService.create(req.body);
     await this.emitCartUpdate(created);
-    return res.status(201).json({ success: true, data: created });
+    return this.sendCreated(res, created);
   }
 
   async update(req: any, res: any) {
     const updated = await cartItemService.updateById(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ success: false, message: 'Not found' });
+    if (!updated) return this.sendError(res, 'Not found', 404);
 
     await this.emitCartUpdate(updated);
-    return res.status(200).json({ success: true, data: updated });
+    return this.sendSuccess(res, updated);
   }
 
   async remove(req: any, res: any) {
     const existing = await cartItemService.getById(req.params.id);
     await cartItemService.deleteById(req.params.id);
     if (existing) await this.emitCartUpdate(existing, 'removed');
-    return res.status(204).send();
+    return this.sendNoContent(res);
   }
 
   private async emitCartUpdate(item: any, action = 'updated') {

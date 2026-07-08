@@ -9,7 +9,6 @@
 
 import dotenv from 'dotenv';
 import path from 'path'; // ✅ FIXED: was 'path/win32' — that forces Windows-only path
-                         //    separators and silently breaks .env loading on Linux/macOS/Docker.
 
 dotenv.config({
   path: path.resolve(process.cwd(), '.env'),

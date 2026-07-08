@@ -4,6 +4,7 @@ import jwtUtil from '../utils/jwt.util.ts';
 import passwordUtil from '../utils/password.util.ts';
 import { AppError } from '../utils/app-error.util.ts';
 import { RoleName } from '../database/enums/index.ts';
+import { BaseController } from './BaseController.ts';
 
 interface IResetRecord {
   code: string;
@@ -12,7 +13,7 @@ interface IResetRecord {
 
 const resetStore: Record<string, IResetRecord> = {};
 
-export class AuthController {
+export class AuthController extends BaseController {
   async register(req: Request, res: Response) {
     const { email, password, firstName, lastName, phone } = req.body;
     if (!email || !password || !firstName || !lastName) {
@@ -36,7 +37,7 @@ export class AuthController {
       roleId,
     });
 
-    res.status(201).json({ success: true, data: { id: user.id, email, firstName, lastName, phone } });
+    return this.sendCreated(res, user);
   }
 
   async login(req: Request, res: Response) {
@@ -58,7 +59,7 @@ export class AuthController {
 
     const tokens = jwtUtil.generateTokenPair(payload);
 
-    res.json({ success: true, data: { tokens, user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone } } });
+    return this.sendSuccess(res, { tokens, user });
   }
 
   async refresh(req: Request, res: Response) {
@@ -67,7 +68,7 @@ export class AuthController {
     const decoded = jwtUtil.verifyRefreshToken(refreshToken);
     const payload = { userId: decoded.userId, email: decoded.email, role: decoded.role };
     const tokens = jwtUtil.generateTokenPair(payload);
-    res.json({ success: true, data: { tokens } });
+    return this.sendSuccess(res, { tokens });
   }
 
   async forgotPassword(req: Request, res: Response) {
@@ -80,7 +81,7 @@ export class AuthController {
     // eslint-disable-next-line no-console
     console.info(`Password reset code for ${identifier}: ${code}`);
 
-    res.json({ success: true, data: { resetCodeSent: true } });
+    return this.sendSuccess(res, { resetCodeSent: true });
   }
 
   async verifyResetCode(req: Request, res: Response) {
@@ -89,7 +90,7 @@ export class AuthController {
     if (!record || record.code !== code || record.expiresAt < Date.now()) {
       throw new AppError('Invalid or expired reset code', 400);
     }
-    res.json({ success: true, data: { verified: true } });
+    return this.sendSuccess(res, { verified: true });
   }
 
   async resetPassword(req: Request, res: Response) {
@@ -110,7 +111,7 @@ export class AuthController {
 
     delete resetStore[identifier];
 
-    res.json({ success: true, data: { reset: true } });
+    return this.sendSuccess(res, { reset: true });
   }
 
   async me(req: Request, res: Response) {
@@ -120,7 +121,7 @@ export class AuthController {
     const user = await userService.getById(userId);
     if (!user) throw new AppError('User not found', 404);
 
-    res.json({ success: true, data: { user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, phone: user.phone, avatar: user.avatar } } });
+    return this.sendSuccess(res, user);
   }
 }
 

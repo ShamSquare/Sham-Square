@@ -1,12 +1,13 @@
 import type { Request, Response } from 'express';
+import { snakeCaseToCamelCase } from '../utils/response-transformer.util.ts';
 
 export abstract class BaseController {
   protected sendSuccess(res: Response, data: unknown, status = 200) {
-    return res.status(status).json({ success: true, data });
+    return res.status(status).json({ success: true, data: snakeCaseToCamelCase(data) });
   }
 
   protected sendCreated(res: Response, data: unknown) {
-    return res.status(201).json({ success: true, data });
+    return res.status(201).json({ success: true, data: snakeCaseToCamelCase(data) });
   }
 
   protected sendError(res: Response, message: string, status = 400) {

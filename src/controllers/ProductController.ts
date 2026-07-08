@@ -11,15 +11,15 @@ export class ProductController extends CrudController<IProduct> {
   async create(req: any, res: any) {
     const created = await productService.create(req.body);
     realtimeService.emitPublic('inventory:updated', { action: 'created', product: created });
-    return res.status(201).json({ success: true, data: created });
+    return this.sendCreated(res, created);
   }
 
   async update(req: any, res: any) {
     const updated = await productService.updateById(req.params.id, req.body);
-    if (!updated) return res.status(404).json({ success: false, message: 'Not found' });
+    if (!updated) return this.sendError(res, 'Not found', 404);
 
     realtimeService.emitPublic('inventory:updated', { action: 'updated', product: updated });
-    return res.status(200).json({ success: true, data: updated });
+    return this.sendSuccess(res, updated);
   }
 }
 

@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import deviceUtil from '../utils/deviceToken.util.ts';
 import { AppError } from '../utils/app-error.util.ts';
+import { BaseController } from './BaseController.ts';
 
-export class DeviceController {
+export class DeviceController extends BaseController {
   async register(req: Request, res: Response) {
     const userId = (req as any).user?.userId;
     if (!userId) throw new AppError('Unauthorized', 401);
@@ -11,7 +12,7 @@ export class DeviceController {
 
     const result = await deviceUtil.registerDevice({ userId, fcmToken, deviceType } as any);
     if (!result.success) throw new AppError(result.message, 500);
-    res.json({ success: true, data: { deviceId: result.deviceId } });
+    return this.sendSuccess(res, { deviceId: result.deviceId });
   }
 
   async unregister(req: Request, res: Response) {
@@ -22,14 +23,14 @@ export class DeviceController {
 
     const result = await deviceUtil.unregisterDevice(fcmToken);
     if (!result.success) throw new AppError(result.message, 500);
-    res.json({ success: true, data: { message: result.message } });
+    return this.sendSuccess(res, { message: result.message });
   }
 
   async list(req: Request, res: Response) {
     const userId = (req as any).user?.userId;
     if (!userId) throw new AppError('Unauthorized', 401);
     const result = await deviceUtil.getUserDevices(userId as any);
-    res.json({ success: true, data: result });
+    return this.sendSuccess(res, result);
   }
 }
 

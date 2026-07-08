@@ -37,7 +37,7 @@ export class OrderController extends CrudController<IOrder> {
       // keep order creation intact even if notification fails
     }
 
-    return res.status(201).json({ success: true, data: created });
+    return this.sendCreated(res, created);
   }
 
   async update(req: AuthReq, res: any) {
