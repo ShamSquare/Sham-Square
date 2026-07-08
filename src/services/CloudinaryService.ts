@@ -44,7 +44,7 @@ class CloudinaryService {
   }
 
   /**
-   * Upload single image
+   * Upload single image from file path (URL or local)
    */
   async uploadImage(
     filePath: string,
@@ -85,31 +85,113 @@ class CloudinaryService {
   }
 
   /**
+   * Upload single image from Base64 data
+   */
+  async uploadImageFromBase64(
+    base64Data: string,
+    folder: ImageFolder,
+    publicId?: string
+  ): Promise<IUploadResult> {
+    try {
+      this.ensureInitialized();
+
+      const uploadOptions: any = {
+        folder,
+        resource_type: 'image',
+        quality: 'auto',
+        fetch_format: 'auto',
+      };
+
+      if (publicId) {
+        uploadOptions.public_id = publicId;
+        uploadOptions.overwrite = true;
+      }
+
+      const result = await cloudinary.uploader.upload(base64Data, uploadOptions);
+
+      logger.info(`Image uploaded from base64: ${result.public_id}`);
+
+      return {
+        publicId: result.public_id,
+        secureUrl: result.secure_url,
+        format: result.format,
+        size: result.bytes,
+        width: result.width,
+        height: result.height,
+      };
+    } catch (error) {
+      logger.error('Cloudinary base64 upload error', error);
+      throw new Error(`Failed to upload image from base64: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Upload single image from URL
+   */
+  async uploadImageFromUrl(
+    fileUrl: string,
+    folder: ImageFolder,
+    publicId?: string
+  ): Promise<IUploadResult> {
+    try {
+      this.ensureInitialized();
+
+      const uploadOptions: any = {
+        folder,
+        resource_type: 'auto',
+        quality: 'auto',
+        fetch_format: 'auto',
+      };
+
+      if (publicId) {
+        uploadOptions.public_id = publicId;
+        uploadOptions.overwrite = true;
+      }
+
+      const result = await cloudinary.uploader.upload(fileUrl, uploadOptions);
+
+      logger.info(`Image uploaded from URL: ${result.public_id}`);
+
+      return {
+        publicId: result.public_id,
+        secureUrl: result.secure_url,
+        format: result.format,
+        size: result.bytes,
+        width: result.width,
+        height: result.height,
+      };
+    } catch (error) {
+      logger.error('Cloudinary upload error from URL', error);
+      throw new Error(`Failed to upload image from URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Upload product image
    */
   async uploadProductImage(filePath: string, productId: string): Promise<IUploadResult> {
-    return this.uploadImage(filePath, ImageFolder.PRODUCTS, `product_${productId}_${Date.now()}`);
+    return this.uploadImageFromUrl(filePath, ImageFolder.PRODUCTS, `product_${productId}_${Date.now()}`);
   }
 
   /**
    * Upload category image
    */
   async uploadCategoryImage(filePath: string, categoryId: string): Promise<IUploadResult> {
-    return this.uploadImage(filePath, ImageFolder.CATEGORIES, `category_${categoryId}`);
+    return this.uploadImageFromUrl(filePath, ImageFolder.CATEGORIES, `category_${categoryId}`);
   }
 
   /**
    * Upload user profile image
    */
   async uploadUserProfileImage(filePath: string, userId: string): Promise<IUploadResult> {
-    return this.uploadImage(filePath, ImageFolder.USERS, `user_${userId}`);
+    return this.uploadImageFromUrl(filePath, ImageFolder.USERS, `user_${userId}`);
   }
 
   /**
    * Upload banner image
    */
   async uploadBannerImage(filePath: string, bannerId: string): Promise<IUploadResult> {
-    return this.uploadImage(filePath, ImageFolder.BANNERS, `banner_${bannerId}`);
+    return this.uploadImageFromUrl(filePath, ImageFolder.BANNERS, `banner_${bannerId}`);
   }
 
   /**

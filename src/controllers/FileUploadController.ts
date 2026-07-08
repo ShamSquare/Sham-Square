@@ -1,11 +1,17 @@
+/**
+ * File Upload Controller
+ * Handles image and file uploads to Cloudinary
+ */
+
 import { Request, Response } from 'express';
 import cloudinaryService, { ImageFolder } from '../services/CloudinaryService.ts';
 import { AppError } from '../utils/app-error.util.ts';
+import { validateUploadedFile } from '../utils/fileUpload.util.ts';
 import fs from 'fs/promises';
 import path from 'path';
 import { BaseController } from './BaseController.ts';
 
-export class UploadController extends BaseController {
+export class FileUploadController extends BaseController {
   async uploadByUrl(req: Request, res: Response) {
     const { fileUrl, folder = 'users', resourceId } = req.body as any;
     if (!fileUrl) throw new AppError('Missing fileUrl', 400);
@@ -29,6 +35,19 @@ export class UploadController extends BaseController {
     const { folder = 'users', resourceId } = req.body as any;
     if (!req.file) throw new AppError('No file uploaded', 400);
 
+    // Validate file
+    const fileMetadata = {
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      path: req.file.path,
+    };
+
+    const validation = validateUploadedFile(fileMetadata);
+    if (!validation.valid) {
+      throw new AppError(validation.error || 'Invalid file', 400);
+    }
+
     // map folder
     const folderMap: Record<string, ImageFolder> = {
       users: ImageFolder.USERS,
@@ -41,12 +60,7 @@ export class UploadController extends BaseController {
     const filePath = req.file.path;
 
     try {
-      let result;
-      if (req.file.mimetype.startsWith('image/')) {
-        result = await cloudinaryService.uploadImage(filePath, target, resourceId ? String(resourceId) : undefined);
-      } else {
-        throw new AppError('File must be an image', 400);
-      }
+      const result = await cloudinaryService.uploadImage(filePath, target, resourceId ? String(resourceId) : undefined);
 
       return this.sendSuccess(res, {
         url: result.secureUrl,
@@ -63,8 +77,24 @@ export class UploadController extends BaseController {
   }
 
   async uploadMultiple(req: Request, res: Response) {
-    const { folder = 'users', resourceId } = req.body as any;
-    if (!req.files || req.files.length === 0) throw new AppError('No files uploaded', 400);
+    if (!req.files || Object.keys(req.files).length === 0) throw new AppError('No files uploaded', 400);
+
+    // Get all files from the object array
+    const filesArray = Object.values(req.files).flat();
+    if (filesArray.length === 0) throw new AppError('No files uploaded', 400);
+
+    // Validate all files
+    for (const file of filesArray) {
+      const validation = validateUploadedFile({
+        originalName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        path: file.path,
+      });
+      if (!validation.valid) {
+        throw new AppError(`Invalid file: ${validation.error}`, 400);
+      }
+    }
 
     // map folder
     const folderMap: Record<string, ImageFolder> = {
@@ -74,14 +104,14 @@ export class UploadController extends BaseController {
       banners: ImageFolder.BANNERS,
     };
 
-    const target = folderMap[folder] ?? ImageFolder.USERS;
-    const filePaths = Array.isArray(req.files) ? req.files.map(f => f.path) : [];
+    const target = folderMap['files'] ?? ImageFolder.USERS;
+    const filePaths = filesArray.map(f => f.path);
 
     try {
       const results = await Promise.all(
-        filePaths.map(async (filePath, index) => {
-          const resourceIdWithIndex = resourceId ? `${resourceId}_${index + 1}` : undefined;
-          return await cloudinaryService.uploadImage(filePath, target, resourceIdWithIndex);
+        filesArray.map(async (file, index) => {
+          const resourceIdWithIndex = `batch_${index + 1}`;
+          return await cloudinaryService.uploadImage(file.path, target, resourceIdWithIndex);
         })
       );
 
@@ -102,4 +132,4 @@ export class UploadController extends BaseController {
   }
 }
 
-export const uploadController = new UploadController();
+export const fileUploadController = new FileUploadController();

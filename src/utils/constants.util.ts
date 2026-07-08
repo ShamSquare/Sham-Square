@@ -27,6 +27,16 @@ export const FILE_SIZE_LIMITS = {
   VIDEO: 50 * 1024 * 1024, // 50MB
 };
 
+// Image upload folder mappings
+export const UPLOAD_FOLDERS = {
+  PRODUCTS: 'products',
+  CATEGORIES: 'categories',
+  SUBCATEGORIES: 'subcategories',
+  USERS: 'users',
+  BANNERS: 'banners',
+  SUPPORT: 'support',
+};
+
 // API endpoints
 export const API_ENDPOINTS = {
   AUTH: '/api/auth',

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { roleRoutes } from './roleRoutes.ts';
 import { authRoutes } from './authRoutes.ts';
-import { uploadRoutes } from './uploadRoutes.ts';
+import { fileUploadRoutes } from './fileUploadRoutes.ts';
 import { deviceRoutes } from './deviceRoutes.ts';
 import { userRoutes } from './userRoutes.ts';
 import { addressRoutes } from './addressRoutes.ts';
@@ -27,7 +27,7 @@ const router = Router();
 
 router.use('/roles', roleRoutes);
 router.use('/auth', authRoutes);
-router.use('/uploads', uploadRoutes);
+router.use('/uploads', fileUploadRoutes);
 router.use('/devices', deviceRoutes);
 router.use('/users', userRoutes);
 router.use('/addresses', addressRoutes);
