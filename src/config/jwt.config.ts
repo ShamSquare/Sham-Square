@@ -24,6 +24,22 @@ export interface ITokenPayload {
   exp?: number;
 }
 
+/**
+ * Map database role values to JWT token role values
+ */
+/**
+ * Map database role values to JWT token role values
+ */
+export const mapRoleToTokenRole = (role: string): ITokenPayload['role'] => {
+  const roleMap: Record<string, ITokenPayload['role']> = {
+    USER: 'user',
+    ADMIN: 'admin',
+    SUPER_ADMIN: 'superadmin',
+    DELIVERY: 'delivery',
+  };
+  return roleMap[role] || 'user';
+};
+
 class JWTConfig {
   private config: IJWTConfig;
 
@@ -73,5 +89,6 @@ class JWTConfig {
     ) as any;
   }
 }
+
 
 export default new JWTConfig();

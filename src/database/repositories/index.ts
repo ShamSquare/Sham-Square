@@ -1,5 +1,6 @@
 export { RoleRepository, roleRepository } from './RoleRepository.ts';
 export { UserRepository, userRepository } from './UserRepository.ts';
+export { WebUserRepository, webUserRepository } from './WebUserRepository.ts';
 export { AddressRepository, addressRepository } from './AddressRepository.ts';
 export { CategoryRepository, categoryRepository } from './CategoryRepository.ts';
 export { SubCategoryRepository, subCategoryRepository } from './SubCategoryRepository.ts';

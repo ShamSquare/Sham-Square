@@ -2,6 +2,7 @@ export { BaseService } from './BaseService.ts';
 
 export { RoleService, roleService } from './RoleService.ts';
 export { UserService, userService } from './UserService.ts';
+export { WebAuthService, webAuthService } from './WebAuthService.ts';
 export { AddressService, addressService } from './AddressService.ts';
 export { CategoryService, categoryService } from './CategoryService.ts';
 export { SubCategoryService, subCategoryService } from './SubCategoryService.ts';

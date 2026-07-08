@@ -1,6 +1,7 @@
 export type { IRole, IPermission } from './Role.ts';
 
 export type { IUser, IDeviceToken } from './User.ts';
+export type { IWebUser } from './WebUser.ts';
 
 export type { IAddress } from './Address.ts';
 
