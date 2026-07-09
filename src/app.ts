@@ -23,12 +23,12 @@ const app = express();
 ========================= */
 app.use(helmet());
 
-app.use(
-  cors({
-    origin: env.frontend.clientUrl || '*',
-    credentials: true,
-  })
-);
+const allowedOrigins = process.env.CLIENT_URL!.split(',');
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 
 /* =========================
    2. BODY PARSING
