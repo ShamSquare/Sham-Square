@@ -24,12 +24,30 @@ export class WebAuthService extends BaseService<IWebUser> {
     return user;
   }
 
+  async loginByPhone(phone: string, passwordHash: string): Promise<IWebUser | null> {
+    const user = await this.findOne({ phone, isDeleted: false, status: 'ACTIVE' });
+    if (!user) return null;
+    return user;
+  }
+
   async updateLastLogin(userId: string): Promise<void> {
     await this.updateById(userId, { lastLoginAt: new Date() });
   }
 
   async getUserById(userId: string): Promise<IWebUser | null> {
     return this.getById(userId);
+  }
+
+  async markPhoneVerified(userId: string): Promise<void> {
+    await this.updateById(userId, { phoneVerified: true });
+  }
+
+  async markEmailVerified(userId: string): Promise<void> {
+    await this.updateById(userId, { emailVerified: true });
+  }
+
+  async updateEmail(userId: string, email: string): Promise<void> {
+    await this.updateById(userId, { email, emailVerified: false });
   }
 
   async deleteUser(userId: string): Promise<void> {

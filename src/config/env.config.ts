@@ -52,6 +52,14 @@ export interface IEnvConfig {
   frontend: {
     clientUrl: string;
   };
+  sms: {
+    enabled: boolean;
+    gatewayMode: 'android' | 'twilio' | 'mock';
+    gatewayUrl: string;
+    username: string;
+    password: string;
+    timeout: number;
+  };
   upload: {
     maxFileSize: number;
   };
@@ -124,8 +132,19 @@ const envConfig: IEnvConfig = {
     clientUrl: getEnvVariable('CLIENT_URL', 'http://localhost:3000'),
   },
 
+
+
   upload: {
     maxFileSize: parseInt(getEnvVariable('MAX_FILE_SIZE', '5242880'), 10),
+  },
+
+  sms: {
+    enabled: getEnvVariable('SMS_ENABLED', 'true') === 'true',
+    gatewayMode: getEnvVariable('SMS_GATEWAY_MODE', 'android') as 'android' | 'twilio' | 'mock',
+    gatewayUrl: getEnvVariable('SMS_GATEWAY_URL', 'http://localhost:8080'),
+    username: getEnvVariable('SMS_GATEWAY_USERNAME', ''),
+    password: getEnvVariable('SMS_GATEWAY_PASSWORD', ''),
+    timeout: parseInt(getEnvVariable('SMS_GATEWAY_TIMEOUT', '10000'), 10),
   },
 };
 

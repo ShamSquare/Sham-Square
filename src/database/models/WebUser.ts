@@ -14,6 +14,7 @@ export interface IWebUser {
   role: string;
   status: string;
   emailVerified: boolean;
+  phoneVerified: boolean;
   lastLoginAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
