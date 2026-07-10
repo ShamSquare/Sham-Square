@@ -1911,6 +1911,9 @@
   *               lastName:
   *                 type: string
   *                 example: Doe
+  *               phone:
+  *                 type: string
+  *                 example: +963987654321
   *         required:
   *           - email
   *           - password

@@ -8,7 +8,7 @@ import { mapRoleToTokenRole } from '../config/jwt.config.ts';
 
 export class WebAuthController extends BaseController {
   async register(req: Request, res: Response) {
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, firstName, lastName, phone } = req.body;
 
     if (!email || !password || !firstName || !lastName) {
       throw new AppError('Missing required fields', 400);
@@ -23,6 +23,7 @@ export class WebAuthController extends BaseController {
       passwordHash,
       firstName,
       lastName,
+      phone: phone || null,
       role: 'USER',
       status: 'ACTIVE',
       emailVerified: false,
@@ -43,6 +44,7 @@ export class WebAuthController extends BaseController {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      phone: user.phone,
     };
 
     return this.sendSuccess(res, { user: userResponse, token: tokens.accessToken });
