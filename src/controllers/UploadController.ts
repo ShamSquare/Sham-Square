@@ -5,12 +5,15 @@ import fs from 'fs/promises';
 import path from 'path';
 import { BaseController } from './BaseController.ts';
 
+/**
+ * @deprecated Use FileUploadController instead.
+ * This controller is kept for backward compatibility.
+ */
 export class UploadController extends BaseController {
   async uploadByUrl(req: Request, res: Response) {
     const { fileUrl, folder = 'users', resourceId } = req.body as any;
     if (!fileUrl) throw new AppError('Missing fileUrl', 400);
 
-    // map folder
     const folderMap: Record<string, ImageFolder> = {
       users: ImageFolder.USERS,
       products: ImageFolder.PRODUCTS,
@@ -29,7 +32,6 @@ export class UploadController extends BaseController {
     const { folder = 'users', resourceId } = req.body as any;
     if (!req.file) throw new AppError('No file uploaded', 400);
 
-    // map folder
     const folderMap: Record<string, ImageFolder> = {
       users: ImageFolder.USERS,
       products: ImageFolder.PRODUCTS,
@@ -64,9 +66,13 @@ export class UploadController extends BaseController {
 
   async uploadMultiple(req: Request, res: Response) {
     const { folder = 'users', resourceId } = req.body as any;
-    if (!req.files || req.files.length === 0) throw new AppError('No files uploaded', 400);
+    if (!req.files) throw new AppError('No files uploaded', 400);
 
-    // map folder
+    const filesArray: Express.Multer.File[] = Array.isArray(req.files)
+      ? req.files
+      : Object.values(req.files).flat();
+    if (filesArray.length === 0) throw new AppError('No files uploaded', 400);
+
     const folderMap: Record<string, ImageFolder> = {
       users: ImageFolder.USERS,
       products: ImageFolder.PRODUCTS,
@@ -75,7 +81,7 @@ export class UploadController extends BaseController {
     };
 
     const target = folderMap[folder] ?? ImageFolder.USERS;
-    const filePaths = Array.isArray(req.files) ? req.files.map(f => f.path) : [];
+    const filePaths = filesArray.map(f => f.path);
 
     try {
       const results = await Promise.all(

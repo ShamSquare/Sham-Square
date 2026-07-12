@@ -66,7 +66,7 @@ class CloudinaryService {
         uploadOptions.overwrite = true;
       }
 
-      const result = await cloudinary.uploader.upload(filePath, uploadOptions);
+      const result = await cloudinary.uploader.upload(filePath as string, uploadOptions);
 
       logger.info(`Image uploaded: ${result.public_id}`);
 
@@ -107,7 +107,7 @@ class CloudinaryService {
         uploadOptions.overwrite = true;
       }
 
-      const result = await cloudinary.uploader.upload(base64Data, uploadOptions);
+      const result = await cloudinary.uploader.upload(base64Data as string, uploadOptions);
 
       logger.info(`Image uploaded from base64: ${result.public_id}`);
 
@@ -148,7 +148,7 @@ class CloudinaryService {
         uploadOptions.overwrite = true;
       }
 
-      const result = await cloudinary.uploader.upload(fileUrl, uploadOptions);
+      const result = await cloudinary.uploader.upload(fileUrl as string, uploadOptions);
 
       logger.info(`Image uploaded from URL: ${result.public_id}`);
 

@@ -77,10 +77,11 @@ export class FileUploadController extends BaseController {
   }
 
   async uploadMultiple(req: Request, res: Response) {
-    if (!req.files || Object.keys(req.files).length === 0) throw new AppError('No files uploaded', 400);
+    if (!req.files) throw new AppError('No files uploaded', 400);
 
-    // Get all files from the object array
-    const filesArray = Object.values(req.files).flat();
+    const filesArray: Express.Multer.File[] = Array.isArray(req.files)
+      ? req.files
+      : Object.values(req.files).flat();
     if (filesArray.length === 0) throw new AppError('No files uploaded', 400);
 
     // Validate all files
