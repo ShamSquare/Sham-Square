@@ -23,6 +23,7 @@ import { bannerRoutes } from './bannerRoutes.ts';
 import { supportTicketRoutes } from './supportTicketRoutes.ts';
 import { auditLogRoutes } from './auditLogRoutes.ts';
 import { settingRoutes } from './settingRoutes.ts';
+import { otpRoutes } from './otpRoutes.ts';
 
 const router = Router();
 
@@ -50,5 +51,6 @@ router.use('/banners', bannerRoutes);
 router.use('/support-tickets', supportTicketRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/settings', settingRoutes);
+router.use('/', otpRoutes);
 
 export { router as apiRouter };

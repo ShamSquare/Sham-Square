@@ -1,11 +1,29 @@
 /**
  * OTP Service
- * Handles OTP generation, storage, verification, and SMS delivery via Android SMS Gateway
+ * Handles OTP generation, storage, verification, and SMS delivery via SMS-Gate
+ *
+ * All OTP logic is implemented server-side. Never exposes OTP values in API responses.
  */
 
-import envConfig from '../config/env.config.ts';
+import crypto from 'crypto';
+import logger from '../utils/logger.util.ts';
+import { smsGateService } from './SmsGateService.ts';
 
-interface IOtpRecord {
+// ─────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────
+
+const OTP_LENGTH = 6;
+const OTP_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_ATTEMPTS = 3;
+const MAX_RESENDS = 3;
+const RESEND_COOLDOWN_MS = 60 * 1000; // 1 minute cooldown
+
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
+
+interface OtpRecord {
   code: string;
   expiresAt: number;
   attempts: number;
@@ -13,86 +31,72 @@ interface IOtpRecord {
   resendCount: number;
 }
 
-const otpStore: Record<string, IOtpRecord> = {};
+// In-memory OTP store. For production with multiple server instances,
+// replace with Redis or similar distributed store.
+const otpStore = new Map<string, OtpRecord>();
 
-// Configuration
-const OTP_LENGTH = 6;
-const OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
-const MAX_ATTEMPTS = 3;
-const RESEND_COOLDOWN_MS = 60 * 1000; // 1 minute
-const MAX_RESENDS = 3;
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
 
 /**
- * Generate a random numeric OTP code
+ * Generate a cryptographically secure random numeric OTP code
  */
-function generateOtp(): string {
-  return Math.floor(10 ** (OTP_LENGTH - 1) + Math.random() * 9 * 10 ** (OTP_LENGTH - 1)).toString();
+function generateOtp(length: number): string {
+  const min = Math.pow(10, length - 1);
+  const max = Math.pow(10, length) - 1;
+  const range = max - min + 1;
+
+  // Use crypto.randomBytes for cryptographic randomness
+  const bytes = crypto.randomBytes(4);
+  const randomInt = bytes.readUInt32BE(0);
+  const otp = (min + (randomInt % range)).toString();
+
+  return otp.padStart(length, '0');
 }
 
 /**
- * Send OTP via Android SMS Gateway
+ * Validate phone number is in E.164 format
  */
-async function sendSmsViaGateway(phone: string, code: string): Promise<{ success: boolean; error?: string }> {
-  if (!envConfig.sms.enabled) {
-    console.info(`[SMS Disabled] OTP for ${phone}: ${code}`);
-    return { success: true };
-  }
-
-  try {
-    const url = `${envConfig.sms.gatewayUrl}/api/send`;
-    const auth = Buffer.from(`${envConfig.sms.username}:${envConfig.sms.password}`).toString('base64');
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), envConfig.sms.timeout);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${auth}`,
-      },
-      body: JSON.stringify({
-        phoneNumber: phone,
-        message: `Your verification code is: ${code}. Valid for 10 minutes.`,
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      throw new Error(`SMS Gateway error: ${response.status} - ${errorText}`);
-    }
-
-    const result = await response.json().catch(() => ({}));
-    return { success: true, error: undefined };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown SMS error';
-    console.error('Failed to send SMS:', message);
-    return { success: false, error: message };
-  }
+function isValidE164(phone: string): boolean {
+  return /^\+[1-9]\d{6,14}$/.test(phone);
 }
 
 /**
- * OTP Service
+ * Normalize phone number (strip spaces, dashes, parens)
  */
+function normalizePhone(phone: string): string {
+  return phone.replace(/[\s\-\(\)]/g, '');
+}
+
+// ─────────────────────────────────────────────
+// OTP Service
+// ─────────────────────────────────────────────
+
 export const otpService = {
   /**
-   * Send OTP to a phone number
+   * Send OTP to a phone number via SMS-Gate
    */
-  async sendOtp(phone: string): Promise<{ success: boolean; message: string; error?: string }> {
-    const normalizedPhone = phone.replace(/\s+/g, '').trim();
-    const now = Date.now();
+  async sendOtp(
+    phone: string,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    const normalizedPhone = normalizePhone(phone);
 
-    // Check resend cooldown
-    const existing = otpStore[normalizedPhone];
+    if (!isValidE164(normalizedPhone)) {
+      return { success: false, error: 'Invalid phone number format. Use E.164 format (e.g. +963XXXXXXXX).' };
+    }
+
+    const now = Date.now();
+    const existing = otpStore.get(normalizedPhone);
+
+    // Check cooldown
     if (existing && now - existing.lastSentAt < RESEND_COOLDOWN_MS) {
-      const waitSeconds = Math.ceil((RESEND_COOLDOWN_MS - (now - existing.lastSentAt)) / 1000);
+      const remainingSeconds = Math.ceil(
+        (RESEND_COOLDOWN_MS - (now - existing.lastSentAt)) / 1000,
+      );
       return {
         success: false,
-        message: '',
-        error: `Please wait ${waitSeconds} seconds before requesting a new code`,
+        error: `Please wait ${remainingSeconds} seconds before requesting a new code.`,
       };
     }
 
@@ -100,156 +104,154 @@ export const otpService = {
     if (existing && existing.resendCount >= MAX_RESENDS) {
       return {
         success: false,
-        message: '',
-        error: 'Maximum resend attempts reached. Please try again later.',
+        error: 'Maximum OTP requests reached. Please try again later.',
       };
     }
 
-    const code = generateOtp();
+    // Generate secure OTP and replace any previous OTP for this phone
+    const code = generateOtp(OTP_LENGTH);
     const expiresAt = now + OTP_EXPIRY_MS;
 
-    // Store OTP
-    otpStore[normalizedPhone] = {
+    // Store OTP (replaces previous)
+    otpStore.set(normalizedPhone, {
       code,
       expiresAt,
       attempts: 0,
       lastSentAt: now,
-      resendCount: (existing?.resendCount || 0) + 1,
-    };
+      resendCount: (existing?.resendCount ?? -1) + 1, // First send = 0 resends
+    });
 
-    // Send via SMS Gateway
-    const smsResult = await sendSmsViaGateway(normalizedPhone, code);
+    logger.info('[OTP] Code generated', {
+      phone: normalizedPhone.slice(0, 7) + '****',
+      expiresAt: new Date(expiresAt).toISOString(),
+      resendCount: (existing?.resendCount ?? -1) + 1,
+    });
+
+    // Send via SMS-Gate
+    const smsResult = await smsGateService.sendSms(
+      normalizedPhone,
+      `Your verification code is: ${code}. It expires in 5 minutes.`,
+    );
+
     if (!smsResult.success) {
-      delete otpStore[normalizedPhone];
-      return {
-        success: false,
-        message: '',
-        error: `Failed to send SMS: ${smsResult.error}`,
-      };
+      // Remove the OTP if SMS sending failed
+      otpStore.delete(normalizedPhone);
+      logger.error('[OTP] Failed to send SMS', {
+        phone: normalizedPhone.slice(0, 7) + '****',
+        error: smsResult.error,
+      });
+      return { success: false, error: smsResult.error || 'Unable to send OTP' };
     }
 
-    return {
-      success: true,
-      message: 'Verification code sent successfully',
-    };
+    logger.info('[OTP] Sent successfully', {
+      phone: normalizedPhone.slice(0, 7) + '****',
+      messageId: smsResult.messageId,
+    });
+
+    return { success: true, message: 'Verification code sent successfully.' };
   },
 
   /**
-   * Verify OTP code
+   * Verify an OTP code
    */
-  async verifyOtp(phone: string, code: string): Promise<{ success: boolean; error?: string }> {
-    const normalizedPhone = phone.replace(/\s+/g, '').trim();
-    const record = otpStore[normalizedPhone];
-    const now = Date.now();
+  async verifyOtp(
+    phone: string,
+    code: string,
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    const normalizedPhone = normalizePhone(phone);
+
+    if (!isValidE164(normalizedPhone)) {
+      return { success: false, error: 'Invalid phone number format.' };
+    }
+
+    if (!code || code.length !== OTP_LENGTH || !/^\d+$/.test(code)) {
+      return { success: false, error: 'Invalid verification code format.' };
+    }
+
+    const record = otpStore.get(normalizedPhone);
 
     if (!record) {
       return { success: false, error: 'No verification code found. Please request a new one.' };
     }
 
-    if (record.expiresAt < now) {
-      delete otpStore[normalizedPhone];
+    const now = Date.now();
+
+    // Check expiry
+    if (now > record.expiresAt) {
+      otpStore.delete(normalizedPhone);
       return { success: false, error: 'Verification code has expired. Please request a new one.' };
     }
 
+    // Check max attempts (brute force protection)
     if (record.attempts >= MAX_ATTEMPTS) {
-      delete otpStore[normalizedPhone];
+      otpStore.delete(normalizedPhone);
       return { success: false, error: 'Too many failed attempts. Please request a new code.' };
     }
 
+    // Increment attempts BEFORE checking code (prevents timing side-channel)
+    record.attempts++;
+
     if (record.code !== code) {
-      record.attempts++;
+      logger.info('[OTP] Invalid code', {
+        phone: normalizedPhone.slice(0, 7) + '****',
+        attemptsRemaining: MAX_ATTEMPTS - record.attempts,
+      });
       return { success: false, error: 'Invalid verification code. Please try again.' };
     }
 
-    // Success - clean up
-    delete otpStore[normalizedPhone];
-    return { success: true };
+    // Success - delete OTP for one-time use
+    otpStore.delete(normalizedPhone);
+
+    logger.info('[OTP] Verified successfully', {
+      phone: normalizedPhone.slice(0, 7) + '****',
+    });
+
+    return { success: true, message: 'Phone number verified successfully.' };
   },
 
   /**
-   * Resend OTP (with cooldown and rate limiting)
+   * Clear OTP for a phone number
    */
-  async resendOtp(phone: string): Promise<{ success: boolean; message: string; error?: string }> {
-    const normalizedPhone = phone.replace(/\s+/g, '').trim();
-    const record = otpStore[normalizedPhone];
-    const now = Date.now();
-
-    if (!record) {
-      return { success: false, message: '', error: 'No pending verification. Please request a new code.' };
-    }
-
-    // Check cooldown
-    if (now - record.lastSentAt < RESEND_COOLDOWN_MS) {
-      const waitSeconds = Math.ceil((RESEND_COOLDOWN_MS - (now - record.lastSentAt)) / 1000);
-      return {
-        success: false,
-        message: '',
-        error: `Please wait ${waitSeconds} seconds before requesting a new code`,
-      };
-    }
-
-    // Check max resends
-    if (record.resendCount >= MAX_RESENDS) {
-      return {
-        success: false,
-        message: '',
-        error: 'Maximum resend attempts reached. Please try again later.',
-      };
-    }
-
-    const code = generateOtp();
-    const expiresAt = now + OTP_EXPIRY_MS;
-
-    // Update record
-    otpStore[normalizedPhone] = {
-      code,
-      expiresAt,
-      attempts: 0,
-      lastSentAt: now,
-      resendCount: record.resendCount + 1,
-    };
-
-    // Send via SMS Gateway
-    const smsResult = await sendSmsViaGateway(normalizedPhone, code);
-    if (!smsResult.success) {
-      return {
-        success: false,
-        message: '',
-        error: `Failed to send SMS: ${smsResult.error}`,
-      };
-    }
-
-    return {
-      success: true,
-      message: 'New verification code sent',
-    };
+  clearOtp(phone: string): void {
+    const normalizedPhone = normalizePhone(phone);
+    otpStore.delete(normalizedPhone);
   },
 
   /**
-   * Clean up expired OTPs (can be called periodically)
+   * Check if a phone has a pending OTP
+   */
+  hasPendingOtp(phone: string): boolean {
+    const normalizedPhone = normalizePhone(phone);
+    const record = otpStore.get(normalizedPhone);
+    if (!record) return false;
+    return Date.now() < record.expiresAt;
+  },
+
+  /**
+   * Get remaining time for a pending OTP (in seconds)
+   */
+  getRemainingTime(phone: string): number {
+    const normalizedPhone = normalizePhone(phone);
+    const record = otpStore.get(normalizedPhone);
+    if (!record) return 0;
+    return Math.max(0, Math.ceil((record.expiresAt - Date.now()) / 1000));
+  },
+
+  /**
+   * Clean up expired OTPs (periodic maintenance)
    */
   cleanupExpired(): void {
     const now = Date.now();
-    for (const phone of Object.keys(otpStore)) {
-      if (otpStore[phone].expiresAt < now) {
-        delete otpStore[phone];
+    let count = 0;
+    for (const [phone, record] of otpStore.entries()) {
+      if (record.expiresAt < now) {
+        otpStore.delete(phone);
+        count++;
       }
     }
-  },
-
-  /**
-   * Get OTP info for debugging (without revealing the code)
-   */
-  getOtpInfo(phone: string): { exists: boolean; expiresAt?: number; attempts?: number; resendCount?: number } | null {
-    const normalizedPhone = phone.replace(/\s+/g, '').trim();
-    const record = otpStore[normalizedPhone];
-    if (!record) return null;
-    return {
-      exists: true,
-      expiresAt: record.expiresAt,
-      attempts: record.attempts,
-      resendCount: record.resendCount,
-    };
+    if (count > 0) {
+      logger.debug('[OTP] Cleaned up expired records', { count });
+    }
   },
 };
 

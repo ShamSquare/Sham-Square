@@ -119,7 +119,8 @@ export class WebAuthController extends BaseController {
       throw new AppError('Phone number is required', 400);
     }
 
-    const result = await otpService.resendOtp(phone);
+    // sendOtp handles cooldown and replaces the previous OTP automatically
+    const result = await otpService.sendOtp(phone);
     if (!result.success) {
       throw new AppError(result.error || 'Failed to resend OTP', 400);
     }
