@@ -88,8 +88,8 @@ export class WebAuthController extends BaseController {
 
     // Generate tokens for the user
     if (!user?.id) {
-  throw new Error("User ID is missing");
-}
+      throw new Error("User ID is missing");
+    }
     const payload = {
       userId: user?.id,
       phone: user?.phone,

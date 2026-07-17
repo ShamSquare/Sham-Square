@@ -4,7 +4,7 @@ export interface ISetting {
   id: string;
   key: string;
   value: unknown;
-  group: SettingGroup;
+  groupName: SettingGroup;
   description?: string;
   isPublic: boolean;
   isEncrypted: boolean;

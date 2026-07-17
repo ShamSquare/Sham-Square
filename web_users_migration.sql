@@ -18,6 +18,15 @@ CREATE TABLE IF NOT EXISTS web_users (
   role text NOT NULL DEFAULT 'USER',
   status text NOT NULL DEFAULT 'ACTIVE',
   email_verified boolean NOT NULL DEFAULT false,
+  phone_verified boolean NOT NULL DEFAULT false,
+  
+  -- Soft delete tracking
+  deleted_at timestamptz,
+  
+  -- Audit trail
+  deleted_by uuid,
+  created_by uuid,
+  updated_by uuid,
   
   -- Timestamps for tracking user activity
   last_login_at timestamptz,

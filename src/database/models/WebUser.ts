@@ -18,7 +18,7 @@ export interface IWebUser {
   lastLoginAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  deletedAt: Date;
+  deletedAt?: Date | null;
   isDeleted: boolean;
   version: number;
 }
