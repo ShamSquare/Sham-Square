@@ -8,11 +8,8 @@
  */
 
 import dotenv from 'dotenv';
-import path from 'path'; // ✅ FIXED: was 'path/win32' — that forces Windows-only path
 
-dotenv.config({
-  path: path.resolve(process.cwd(), '.env'),
-});
+dotenv.config();
 // ─────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────
