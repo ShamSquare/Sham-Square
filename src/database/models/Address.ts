@@ -1,4 +1,4 @@
-import { AddressLabel } from '../enums/index.ts';
+import { AddressLabel } from '../enums/index';
 
 export interface IAddress {
   id: string;

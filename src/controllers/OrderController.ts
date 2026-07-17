@@ -1,11 +1,11 @@
-import { CrudController } from './CrudController.ts';
-import { orderService, notificationService } from '../services/index.ts';
-import type { IOrder } from '../database/models/index.ts';
-import { OrderStatus } from '../database/enums/index.ts';
-import { AppError } from '../utils/app-error.util.ts';
-import { realtimeService } from '../services/RealtimeService.ts';
+import { CrudController } from './CrudController';
+import { orderService, notificationService } from '../services/index';
+import type { IOrder } from '../database/models/index';
+import { OrderStatus } from '../database/enums/index';
+import { AppError } from '../utils/app-error.util';
+import { realtimeService } from '../services/RealtimeService';
 
-type AuthReq = import('../middlewares/auth.middleware.ts').AuthRequest;
+type AuthReq = import('../middlewares/auth.middleware').AuthRequest;
 
 export class OrderController extends CrudController<IOrder> {
   constructor() {

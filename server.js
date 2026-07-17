@@ -11,5 +11,4 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 console.log("SERVER JS LOADED");
-require('tsx/cjs');
-require('./src/server');
+require('./dist/server');

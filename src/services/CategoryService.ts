@@ -1,6 +1,7 @@
-import { BaseService } from './BaseService.ts';
-import { categoryRepository } from '../database/repositories/index.ts';
-import type { ICategory } from '../database/models/index.ts';
+import { BaseService } from './BaseService';
+import { categoryRepository } from '../database/repositories/index';
+import type { ICategory } from '../database/models/index'
+;
 
 export class CategoryService extends BaseService<ICategory> {
   constructor() {

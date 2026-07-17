@@ -1,4 +1,4 @@
-import { DevicePlatform, UserStatus } from '../enums/index.ts';
+import { DevicePlatform, UserStatus } from '../enums/index';
 
 export interface IDeviceToken {
   token: string;

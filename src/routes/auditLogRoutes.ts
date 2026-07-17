@@ -1,4 +1,4 @@
-import { createCrudRoutes } from './routeFactory.ts';
-import { auditLogController } from '../controllers/AuditLogController.ts';
+import { createCrudRoutes } from './routeFactory';
+import { auditLogController } from '../controllers/AuditLogController';
 
 export const auditLogRoutes = createCrudRoutes(auditLogController);

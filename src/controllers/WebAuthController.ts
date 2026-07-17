@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
-import { webAuthService } from '../services/WebAuthService.ts';
-import { otpService } from '../services/OtpService.ts';
-import { emailService } from '../services/EmailService.ts';
-import jwtUtil from '../utils/jwt.util.ts';
-import { hashPassword, verifyPassword } from '../utils/password.util.ts';
-import { AppError } from '../utils/app-error.util.ts';
-import { BaseController } from './BaseController.ts';
-import { mapRoleToTokenRole } from '../config/jwt.config.ts';
+import { webAuthService } from '../services/WebAuthService';
+import { otpService } from '../services/OtpService';
+import { emailService } from '../services/EmailService';
+import jwtUtil from '../utils/jwt.util';
+import { hashPassword, verifyPassword } from '../utils/password.util';
+import { AppError } from '../utils/app-error.util';
+import { BaseController } from './BaseController';
+import { mapRoleToTokenRole } from '../config/jwt.config';
 
 export class WebAuthController extends BaseController {
   async register(req: Request, res: Response) {

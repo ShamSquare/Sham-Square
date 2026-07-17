@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.ts';
-import { settingService } from '../services/index.ts';
-import type { ISetting } from '../database/models/index.ts';
+import { CrudController } from './CrudController';
+import { settingService } from '../services/index';
+import type { ISetting } from '../database/models/index';
 
 export class SettingController extends CrudController<ISetting> {
   constructor() {

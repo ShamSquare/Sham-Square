@@ -4,8 +4,8 @@
  */
 
 import { v2 as cloudinary } from 'cloudinary';
-import envConfig from './env.config.ts';
-import logger from '../utils/logger.util.ts';
+import envConfig from './env.config';
+import logger from '../utils/logger.util';
 
 class CloudinaryConfig {
   private isConfigured: boolean = false;

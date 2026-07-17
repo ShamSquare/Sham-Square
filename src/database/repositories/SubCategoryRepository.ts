@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.ts';
-import type { ISubCategory } from '../models/index.ts';
+import { BaseRepository } from './BaseRepository';
+import type { ISubCategory } from '../models/index';
 
 export class SubCategoryRepository extends BaseRepository<ISubCategory> {
   constructor() {

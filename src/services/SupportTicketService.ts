@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.ts';
-import { supportTicketRepository } from '../database/repositories/index.ts';
-import type { ISupportTicket } from '../database/models/index.ts';
+import { BaseService } from './BaseService';
+import { supportTicketRepository } from '../database/repositories/index';
+import type { ISupportTicket } from '../database/models/index';
 
 export class SupportTicketService extends BaseService<ISupportTicket> {
   constructor() {

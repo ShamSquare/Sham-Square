@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { snakeCaseToCamelCase } from '../utils/response-transformer.util.ts';
+import { snakeCaseToCamelCase } from '../utils/response-transformer.util';
 
 export abstract class BaseController {
   protected sendSuccess(res: Response, data: unknown, status = 200) {

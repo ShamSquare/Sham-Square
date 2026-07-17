@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.ts';
-import { supportTicketService } from '../services/index.ts';
-import type { ISupportTicket } from '../database/models/index.ts';
+import { CrudController } from './CrudController';
+import { supportTicketService } from '../services/index';
+import type { ISupportTicket } from '../database/models/index';
 
 export class SupportTicketController extends CrudController<ISupportTicket> {
   constructor() {

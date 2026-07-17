@@ -1,4 +1,4 @@
-import { createCrudRoutes } from './routeFactory.ts';
-import { couponController } from '../controllers/CouponController.ts';
+import { createCrudRoutes } from './routeFactory';
+import { couponController } from '../controllers/CouponController';
 
 export const couponRoutes = createCrudRoutes(couponController);

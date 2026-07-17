@@ -1,7 +1,7 @@
-import { CrudController } from './CrudController.ts';
-import { subCategoryService } from '../services/index.ts';
-import type { ISubCategory } from '../database/models/index.ts';
-import { AppError } from '../utils/app-error.util.ts';
+import { CrudController } from './CrudController';
+import { subCategoryService } from '../services/index';
+import type { ISubCategory } from '../database/models/index';
+import { AppError } from '../utils/app-error.util';
 
 export class SubCategoryController extends CrudController<ISubCategory> {
   constructor() {

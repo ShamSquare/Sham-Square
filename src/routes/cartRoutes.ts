@@ -1,7 +1,7 @@
-import { createCrudRoutes } from './routeFactory.ts';
-import { cartController } from '../controllers/CartController.ts';
-import { asyncHandler } from '../controllers/asyncHandler.ts';
-import { protect } from '../middlewares/auth.middleware.ts';
+import { createCrudRoutes } from './routeFactory';
+import { cartController } from '../controllers/CartController';
+import { asyncHandler } from '../controllers/asyncHandler';
+import { protect } from '../middlewares/auth.middleware';
 
 const router = createCrudRoutes(cartController);
 

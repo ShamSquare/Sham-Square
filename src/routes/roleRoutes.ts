@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createCrudRoutes } from './routeFactory.ts';
-import { roleController } from '../controllers/RoleController.ts';
+import { createCrudRoutes } from './routeFactory';
+import { roleController } from '../controllers/RoleController';
 
 export const roleRoutes = createCrudRoutes(roleController);

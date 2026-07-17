@@ -1,4 +1,4 @@
-import { createCrudRoutes } from './routeFactory.ts';
-import { bannerController } from '../controllers/BannerController.ts';
+import { createCrudRoutes } from './routeFactory';
+import { bannerController } from '../controllers/BannerController';
 
 export const bannerRoutes = createCrudRoutes(bannerController);

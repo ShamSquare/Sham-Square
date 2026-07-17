@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../utils/app-error.util.ts';
-import logger from '../utils/logger.util.ts';
-import { errorResponse } from '../utils/api-response.util.ts';
-import env from '../config/env.config.ts';
+import { AppError } from '../utils/app-error.util';
+import logger from '../utils/logger.util';
+import { errorResponse } from '../utils/api-response.util';
+import env from '../config/env.config';
 
 export function errorHandler(
   err: any,

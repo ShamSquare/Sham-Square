@@ -1,4 +1,4 @@
-import { CartStatus } from '../enums/index.ts';
+import { CartStatus } from '../enums/index';
 
 export interface ICart {
   id: string;

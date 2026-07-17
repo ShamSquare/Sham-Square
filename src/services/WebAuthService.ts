@@ -3,9 +3,9 @@
  * Handles web user registration, authentication, and profile management
  */
 
-import { BaseService } from './BaseService.ts';
-import { webUserRepository } from '../database/repositories/WebUserRepository.ts';
-import type { IWebUser } from '../database/models/WebUser.ts';
+import { BaseService } from './BaseService';
+import { webUserRepository } from '../database/repositories/WebUserRepository';
+import type { IWebUser } from '../database/models/WebUser';
 
 export class WebAuthService extends BaseService<IWebUser> {
   constructor() {

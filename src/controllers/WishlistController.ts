@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.ts';
-import { wishlistService } from '../services/index.ts';
-import type { IWishlist } from '../database/models/index.ts';
+import { CrudController } from './CrudController';
+import { wishlistService } from '../services/index';
+import type { IWishlist } from '../database/models/index';
 
 export class WishlistController extends CrudController<IWishlist> {
   constructor() {

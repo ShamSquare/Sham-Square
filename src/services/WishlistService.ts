@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.ts';
-import { wishlistRepository } from '../database/repositories/index.ts';
-import type { IWishlist } from '../database/models/index.ts';
+import { BaseService } from './BaseService';
+import { wishlistRepository } from '../database/repositories/index';
+import type { IWishlist } from '../database/models/index';
 
 export class WishlistService extends BaseService<IWishlist> {
   constructor() {

@@ -1,4 +1,4 @@
-import envConfig from '../config/env.config.ts';
+import envConfig from '../config/env.config';
 
 export interface SmsProvider {
   sendSms(phone: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }>;

@@ -5,8 +5,8 @@
 
 import * as admin from 'firebase-admin';
 import { Message, MulticastMessage, Messaging, getMessaging } from 'firebase-admin/messaging';
-import envConfig from './env.config.ts';
-import logger from '../utils/logger.util.ts';
+import envConfig from './env.config';
+import logger from '../utils/logger.util';
 
 interface IFirebaseCredentials {
   type: string;

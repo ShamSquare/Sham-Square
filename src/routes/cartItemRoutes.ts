@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { cartItemController } from '../controllers/CartItemController.ts';
-import { asyncHandler } from '../controllers/asyncHandler.ts';
-import { protect } from '../middlewares/auth.middleware.ts';
+import { cartItemController } from '../controllers/CartItemController';
+import { asyncHandler } from '../controllers/asyncHandler';
+import { protect } from '../middlewares/auth.middleware';
 
 const router = Router();
 

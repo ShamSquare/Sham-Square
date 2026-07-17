@@ -1,4 +1,4 @@
-import { ProductStatus } from '../enums/index.ts';
+import { ProductStatus } from '../enums/index';
 
 export interface IProductRatingAggregate {
   average: number;

@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import { BaseController } from './BaseController.ts';
-import type { BaseService } from '../services/BaseService.ts';
+import { BaseController } from './BaseController';
+import type { BaseService } from '../services/BaseService';
 
 export class CrudController<T extends Record<string, any>> extends BaseController {
   constructor(protected readonly service: BaseService<T>) {

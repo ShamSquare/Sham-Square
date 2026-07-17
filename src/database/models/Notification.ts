@@ -1,4 +1,4 @@
-import { NotificationChannel, NotificationDeliveryStatus, NotificationType } from '../enums/index.ts';
+import { NotificationChannel, NotificationDeliveryStatus, NotificationType } from '../enums/index';
 
 export interface INotification {
   id: string;

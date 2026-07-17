@@ -3,18 +3,18 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 
-import env from './config/env.config.ts';
-import logger from './utils/logger.util.ts';
+import env from './config/env.config';
+import logger from './utils/logger.util';
 
 // Routes
-import { apiRouter } from './routes/index.ts';
+import { apiRouter } from './routes/index';
 
 // Utils
-import {errorHandler} from './middlewares/error.middleware.ts';
+import {errorHandler} from './middlewares/error.middleware';
 
 //Swagger
 import swaggerUi from 'swagger-ui-express';
-import {swaggerSpec} from './config/swagger.config.ts';
+import {swaggerSpec} from './config/swagger.config';
 
 const app = express();
 

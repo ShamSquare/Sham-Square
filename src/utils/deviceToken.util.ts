@@ -1,6 +1,6 @@
-import { userDeviceRepository } from '../database/repositories/index.ts';
-import type { DeviceType } from '../database/models/UserDevice.ts';
-import logger from './logger.util.ts';
+import { userDeviceRepository } from '../database/repositories/index;
+import type { DeviceType } from '../database/models/UserDevice;
+import logger from './logger.util;
 
 export interface IRegisterDevicePayload {
   userId: string;

@@ -1,8 +1,8 @@
-import { CrudController } from './CrudController.ts';
-import { cartItemService } from '../services/index.ts';
-import type { ICartItem } from '../database/models/index.ts';
-import { cartRepository } from '../database/repositories/index.ts';
-import { realtimeService } from '../services/RealtimeService.ts';
+import { CrudController } from './CrudController';
+import { cartItemService } from '../services/index';
+import type { ICartItem } from '../database/models/index';
+import { cartRepository } from '../database/repositories/index';
+import { realtimeService } from '../services/RealtimeService';
 
 export class CartItemController extends CrudController<ICartItem> {
   constructor() {

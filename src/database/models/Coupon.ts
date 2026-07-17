@@ -1,4 +1,4 @@
-import { CouponApplicability, CouponType } from '../enums/index.ts';
+import { CouponApplicability, CouponType } from '../enums/index';
 
 export interface ICoupon {
   id: string;

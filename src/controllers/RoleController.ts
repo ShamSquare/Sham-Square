@@ -1,7 +1,7 @@
-import { CrudController } from './CrudController.ts';
-import { roleService } from '../services/index.ts';
-import type { IRole } from '../database/models/index.ts';
-import { AppError } from '../utils/app-error.util.ts';
+import { CrudController } from './CrudController';
+import { roleService } from '../services/index';
+import type { IRole } from '../database/models/index';
+import { AppError } from '../utils/app-error.util';
 
 export class RoleController extends CrudController<IRole> {
   constructor() {

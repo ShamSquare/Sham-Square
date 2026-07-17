@@ -1,11 +1,11 @@
-import { CrudController } from './CrudController.ts';
-import { cartService, notificationService } from '../services/index.ts';
-import type { ICart } from '../database/models/index.ts';
-import { cartRepository, cartItemRepository, orderRepository, orderItemRepository } from '../database/repositories/index.ts';
-import { OrderStatus, CartStatus } from '../database/enums/index.ts';
-import { AppError } from '../utils/app-error.util.ts';
-import { realtimeService } from '../services/RealtimeService.ts';
-import { BaseController } from './BaseController.ts';
+import { CrudController } from './CrudController';
+import { cartService, notificationService } from '../services/index';
+import type { ICart } from '../database/models/index';
+import { cartRepository, cartItemRepository, orderRepository, orderItemRepository } from '../database/repositories/index';
+import { OrderStatus, CartStatus } from '../database/enums/index';
+import { AppError } from '../utils/app-error.util';
+import { realtimeService } from '../services/RealtimeService';
+import { BaseController } from './BaseController';
 
 export class CartController extends CrudController<ICart> {
   constructor() {
@@ -23,10 +23,10 @@ export class CartController extends CrudController<ICart> {
     if (!cart) throw new AppError('Active cart not found', 404);
 
     const items = await cartItemRepository.find({ cartId: cart.id });
-    const activeItems = items.filter((it) => !it.isDeleted);
+    const activeItems = items.filter((it : any) => !it.isDeleted);
     if (activeItems.length === 0) throw new AppError('Cart is empty', 400);
 
-    const subtotal = activeItems.reduce((s, it) => s + (it.unitPrice || 0) * (it.quantity || 1), 0);
+    const subtotal = activeItems.reduce((s: any, it: any) => s + (it.unitPrice || 0) * (it.quantity || 1), 0);
     const pricing = { subtotal, discount: 0, shipping: 0, tax: 0, total: subtotal, currency: cart.currency || 'USD' };
 
     const createdOrder = await orderRepository.create({

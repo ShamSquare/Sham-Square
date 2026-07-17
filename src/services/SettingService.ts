@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.ts';
-import { settingRepository } from '../database/repositories/index.ts';
-import type { ISetting } from '../database/models/index.ts';
+import { BaseService } from './BaseService';
+import { settingRepository } from '../database/repositories/index';
+import type { ISetting } from '../database/models/index';
 
 export class SettingService extends BaseService<ISetting> {
   constructor() {

@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.ts';
-import { auditLogService } from '../services/index.ts';
-import type { IAuditLog } from '../database/models/index.ts';
+import { CrudController } from './CrudController';
+import { auditLogService } from '../services/index';
+import type { IAuditLog } from '../database/models/index';
 
 export class AuditLogController extends CrudController<IAuditLog> {
   constructor() {

@@ -6,8 +6,8 @@
  */
 
 import crypto from 'crypto';
-import logger from '../utils/logger.util.ts';
-import { smsGateService } from './SmsGateService.ts';
+import logger from '../utils/logger.util';
+import { smsGateService } from './SmsGateService';
 
 // ─────────────────────────────────────────────
 // Constants

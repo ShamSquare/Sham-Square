@@ -1,6 +1,6 @@
 import swaggerJSDoc from 'swagger-jsdoc';
-import envConfig from './env.config.ts';
-import { schemas } from './swagger/schemas.ts';
+import envConfig from './env.config';
+import { schemas } from './swagger/schemas';
 
 const options = {
   definition: {
@@ -37,8 +37,8 @@ const options = {
   },
 
   apis: [
-    './src/config/swagger/paths.ts',
-    './src/routes/*.ts',
+    './src/config/swagger/paths',
+    './src/routes/*',
   ],
 };
 

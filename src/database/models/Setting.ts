@@ -1,4 +1,4 @@
-import { SettingGroup } from '../enums/index.ts';
+import { SettingGroup } from '../enums/index';
 
 export interface ISetting {
   id: string;

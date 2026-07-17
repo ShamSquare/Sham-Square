@@ -1,42 +1,42 @@
-export type { IRole, IPermission } from './Role.ts';
+export type { IRole, IPermission } from './Role';
 
-export type { IUser, IDeviceToken } from './User.ts';
-export type { IWebUser } from './WebUser.ts';
+export type { IUser, IDeviceToken } from './User';
+export type { IWebUser } from './WebUser';
 
-export type { IAddress } from './Address.ts';
+export type { IAddress } from './Address';
 
-export type { ICategory } from './Category.ts';
+export type { ICategory } from './Category';
 
-export type { ISubCategory } from './SubCategory.ts';
+export type { ISubCategory } from './SubCategory';
 
-export type { IProduct, IProductRatingAggregate } from './Product.ts';
+export type { IProduct, IProductRatingAggregate } from './Product';
 
-export type { IProductVariant, IProductVariantInventory } from './ProductVariant.ts';
+export type { IProductVariant, IProductVariantInventory } from './ProductVariant';
 
-export type { IProductReview } from './ProductReview.ts';
+export type { IProductReview } from './ProductReview';
 
-export type { IWishlist, IWishlistItem } from './Wishlist.ts';
+export type { IWishlist, IWishlistItem } from './Wishlist';
 
-export type { ICart } from './Cart.ts';
+export type { ICart } from './Cart';
 
-export type { ICartItem } from './CartItem.ts';
+export type { ICartItem } from './CartItem';
 
-export type { IOrder, IOrderDelivery } from './Order.ts';
+export type { IOrder, IOrderDelivery } from './Order';
 
-export type { IOrderItem } from './OrderItem.ts';
+export type { IOrderItem } from './OrderItem';
 
-export type { IOrderTracking } from './OrderTracking.ts';
+export type { IOrderTracking } from './OrderTracking';
 
-export type { INotification } from './Notification.ts';
+export type { INotification } from './Notification';
 
-export type { ICoupon } from './Coupon.ts';
+export type { ICoupon } from './Coupon';
 
-export type { IBanner } from './Banner.ts';
+export type { IBanner } from './Banner';
 
-export type { ISupportTicket, ISupportTicketMessage } from './SupportTicket.ts';
+export type { ISupportTicket, ISupportTicketMessage } from './SupportTicket';
 
-export type { IAuditLog } from './AuditLog.ts';
+export type { IAuditLog } from './AuditLog';
 
-export type { ISetting } from './Setting.ts';
+export type { ISetting } from './Setting';
 
-export type { IUserDevice } from './UserDevice.ts';
+export type { IUserDevice } from './UserDevice';

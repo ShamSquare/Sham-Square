@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { asyncHandler } from '../controllers/asyncHandler.ts';
-import type { CrudController } from '../controllers/CrudController.ts';
+import { asyncHandler } from '../controllers/asyncHandler';
+import type { CrudController } from '../controllers/CrudController';
 
 export function createCrudRoutes<T extends Record<string, any>>(controller: CrudController<T>) {
   const router = Router();

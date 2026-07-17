@@ -1,4 +1,4 @@
-import { SupportTicketCategory, SupportTicketPriority, SupportTicketStatus } from '../enums/index.ts';
+import { SupportTicketCategory, SupportTicketPriority, SupportTicketStatus } from '../enums/index';
 
 export interface ISupportTicketMessage {
   senderId: string;

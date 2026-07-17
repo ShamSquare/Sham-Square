@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.ts';
-import { roleRepository } from '../database/repositories/index.ts';
-import type { IRole } from '../database/models/index.ts';
+import { BaseService } from './BaseService';
+import { roleRepository } from '../database/repositories/index';
+import type { IRole } from '../database/models/index';
 
 export class RoleService extends BaseService<IRole> {
   constructor() {

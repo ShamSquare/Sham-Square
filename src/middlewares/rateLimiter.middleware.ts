@@ -5,8 +5,8 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../utils/app-error.util.ts';
-import logger from '../utils/logger.util.ts';
+import { AppError } from '../utils/app-error.util';
+import logger from '../utils/logger.util';
 
 interface RateLimitEntry {
   count: number;

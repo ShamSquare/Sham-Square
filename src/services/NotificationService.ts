@@ -1,11 +1,11 @@
-import { BaseService } from './BaseService.ts';
-import { notificationRepository, userDeviceRepository } from '../database/repositories/index.ts';
-import type { INotification } from '../database/models/index.ts';
+import { BaseService } from './BaseService';
+import { notificationRepository, userDeviceRepository } from '../database/repositories/index';
+import type { INotification } from '../database/models/index';
 import {
   NotificationType,
-} from '../database/enums/index.ts';
-import FirebaseService from './FirebaseService.ts';
-import logger from '../utils/logger.util.ts';
+} from '../database/enums/index';
+import FirebaseService from './FirebaseService';
+import logger from '../utils/logger.util';
 
 export interface ICreateNotificationPayload {
   userId: string;

@@ -1,4 +1,4 @@
-import { BannerLinkType, BannerPlatform } from '../enums/index.ts';
+import { BannerLinkType, BannerPlatform } from '../enums/index';
 
 export interface IBanner {
   id: string;

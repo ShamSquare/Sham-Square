@@ -1,4 +1,4 @@
-import type { BaseRepository } from '../database/repositories/BaseRepository.ts';
+import type { BaseRepository } from '../database/repositories/BaseRepository';
 
 export abstract class BaseService<T extends Record<string, any>> {
   protected readonly repository: BaseRepository<T>;

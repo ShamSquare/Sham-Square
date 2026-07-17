@@ -1,4 +1,4 @@
-import { createCrudRoutes } from './routeFactory.ts';
-import { productReviewController } from '../controllers/ProductReviewController.ts';
+import { createCrudRoutes } from './routeFactory';
+import { productReviewController } from '../controllers/ProductReviewController';
 
 export const productReviewRoutes = createCrudRoutes(productReviewController);

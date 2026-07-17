@@ -1,8 +1,8 @@
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
-import env from '../config/env.config.ts';
-import jwtUtil from '../utils/jwt.util.ts';
-import logger from '../utils/logger.util.ts';
+import env from '../config/env.config';
+import jwtUtil from '../utils/jwt.util';
+import logger from '../utils/logger.util';
 
 export type RealtimeEvent =
   | 'cart:updated'

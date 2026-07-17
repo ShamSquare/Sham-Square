@@ -1,7 +1,7 @@
-import { CrudController } from './CrudController.ts';
-import { notificationService } from '../services/index.ts';
-import type { INotification } from '../database/models/index.ts';
-import { realtimeService } from '../services/RealtimeService.ts';
+import { CrudController } from './CrudController';
+import { notificationService } from '../services/index';
+import type { INotification } from '../database/models/index';
+import { realtimeService } from '../services/RealtimeService';
 
 export class NotificationController extends CrudController<INotification> {
   constructor() {

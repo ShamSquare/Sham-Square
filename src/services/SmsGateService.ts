@@ -7,8 +7,8 @@
  *   POST /3rdparty/v1/messages     - Send SMS
  */
 
-import envConfig from '../config/env.config.ts';
-import logger from '../utils/logger.util.ts';
+import envConfig from '../config/env.config';
+import logger from '../utils/logger.util';
 
 const SMS_GATE_BASE_URL = 'https://api.sms-gate.app';
 

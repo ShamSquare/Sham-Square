@@ -1,4 +1,4 @@
-import { OrderItemStatus } from '../enums/index.ts';
+import { OrderItemStatus } from '../enums/index';
 
 export interface IOrderItem {
   id: string;

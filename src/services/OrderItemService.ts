@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.ts';
-import { orderItemRepository } from '../database/repositories/index.ts';
-import type { IOrderItem } from '../database/models/index.ts';
+import { BaseService } from './BaseService';
+import { orderItemRepository } from '../database/repositories/index';
+import type { IOrderItem } from '../database/models/index';
 
 export class OrderItemService extends BaseService<IOrderItem> {
   constructor() {

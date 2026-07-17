@@ -1,7 +1,7 @@
-import { CrudController } from './CrudController.ts';
-import { userService } from '../services/index.ts';
-import type { IUser } from '../database/models/index.ts';
-import { AppError } from '../utils/app-error.util.ts';
+import { CrudController } from './CrudController';
+import { userService } from '../services/index';
+import type { IUser } from '../database/models/index';
+import { AppError } from '../utils/app-error.util';
 
 export class UserController extends CrudController<IUser> {
   constructor() {

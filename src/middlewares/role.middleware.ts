@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest } from './auth.middleware.ts';
-import { AppError } from '../utils/app-error.util.ts';
+import { AuthRequest } from './auth.middleware';
+import { AppError } from '../utils/app-error.util';
 
 /**
  * Role-based access control

@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { webAuthController } from '../controllers/WebAuthController.ts';
-import { asyncHandler } from '../controllers/asyncHandler.ts';
-import { protect } from '../middlewares/auth.middleware.ts';
+import { webAuthController } from '../controllers/WebAuthController';
+import { asyncHandler } from '../controllers/asyncHandler';
+import { protect } from '../middlewares/auth.middleware';
 
 const router = Router();
 

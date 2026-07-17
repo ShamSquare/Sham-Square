@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.ts';
-import type { IUserDevice } from '../models/index.ts';
+import { BaseRepository } from './BaseRepository';
+import type { IUserDevice } from '../models/index';
 
 export class UserDeviceRepository extends BaseRepository<IUserDevice> {
   constructor() {

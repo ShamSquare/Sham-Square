@@ -1,5 +1,5 @@
-import supabaseConfig from '../config/supabase.config.ts';
-import logger from '../utils/logger.util.ts';
+import supabaseConfig from '../config/supabase.config';
+import logger from '../utils/logger.util';
 
 class DatabaseConnection {
   private isConnected = false;

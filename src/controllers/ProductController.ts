@@ -1,7 +1,7 @@
-import { CrudController } from './CrudController.ts';
-import { productService } from '../services/index.ts';
-import type { IProduct } from '../database/models/index.ts';
-import { realtimeService } from '../services/RealtimeService.ts';
+import { CrudController } from './CrudController';
+import { productService } from '../services/index';
+import type { IProduct } from '../database/models/index';
+import { realtimeService } from '../services/RealtimeService';
 
 export class ProductController extends CrudController<IProduct> {
   constructor() {

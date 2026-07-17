@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.ts';
-import { orderTrackingService } from '../services/index.ts';
-import type { IOrderTracking } from '../database/models/index.ts';
+import { CrudController } from './CrudController';
+import { orderTrackingService } from '../services/index';
+import type { IOrderTracking } from '../database/models/index';
 
 export class OrderTrackingController extends CrudController<IOrderTracking> {
   constructor() {

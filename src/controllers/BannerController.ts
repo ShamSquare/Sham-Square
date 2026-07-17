@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.ts';
-import { bannerService } from '../services/index.ts';
-import type { IBanner } from '../database/models/index.ts';
+import { CrudController } from './CrudController';
+import { bannerService } from '../services/index';
+import type { IBanner } from '../database/models/index';
 
 export class BannerController extends CrudController<IBanner> {
   constructor() {

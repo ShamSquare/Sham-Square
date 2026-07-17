@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import cloudinaryService, { ImageFolder } from '../services/CloudinaryService.ts';
-import { AppError } from '../utils/app-error.util.ts';
+import cloudinaryService, { ImageFolder } from '../services/CloudinaryService';
+import { AppError } from '../utils/app-error.util';
 import fs from 'fs/promises';
 import path from 'path';
-import { BaseController } from './BaseController.ts';
+import { BaseController } from './BaseController';
 
 /**
  * @deprecated Use FileUploadController instead.

@@ -1,6 +1,6 @@
-import { BaseService } from './BaseService.ts';
-import { productVariantRepository } from '../database/repositories/index.ts';
-import type { IProductVariant } from '../database/models/index.ts';
+import { BaseService } from './BaseService';
+import { productVariantRepository } from '../database/repositories/index';
+import type { IProductVariant } from '../database/models/index';
 
 export class ProductVariantService extends BaseService<IProductVariant> {
   constructor() {

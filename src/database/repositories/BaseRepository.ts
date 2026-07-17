@@ -1,4 +1,4 @@
-import { getAdminClient } from '../supabase.ts';
+import { getAdminClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 function camelToSnake(key: string): string {

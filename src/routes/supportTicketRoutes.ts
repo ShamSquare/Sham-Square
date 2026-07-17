@@ -1,4 +1,4 @@
-import { createCrudRoutes } from './routeFactory.ts';
-import { supportTicketController } from '../controllers/SupportTicketController.ts';
+import { createCrudRoutes } from './routeFactory';
+import { supportTicketController } from '../controllers/SupportTicketController';
 
 export const supportTicketRoutes = createCrudRoutes(supportTicketController);

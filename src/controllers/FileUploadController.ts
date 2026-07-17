@@ -4,12 +4,12 @@
  */
 
 import { Request, Response } from 'express';
-import cloudinaryService, { ImageFolder } from '../services/CloudinaryService.ts';
-import { AppError } from '../utils/app-error.util.ts';
-import { validateUploadedFile } from '../utils/fileUpload.util.ts';
+import cloudinaryService, { ImageFolder } from '../services/CloudinaryService';
+import { AppError } from '../utils/app-error.util';
+import { validateUploadedFile } from '../utils/fileUpload.util';
 import fs from 'fs/promises';
 import path from 'path';
-import { BaseController } from './BaseController.ts';
+import { BaseController } from './BaseController';
 
 export class FileUploadController extends BaseController {
   async uploadByUrl(req: Request, res: Response) {

@@ -1,4 +1,4 @@
-import supabaseConfig from '../config/supabase.config.ts';
+import supabaseConfig from '../config/supabase.config';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const getClient = (): SupabaseClient => supabaseConfig.getClient();

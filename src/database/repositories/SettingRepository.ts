@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.ts';
-import type { ISetting } from '../models/index.ts';
+import { BaseRepository } from './BaseRepository';
+import type { ISetting } from '../models/index';
 
 export class SettingRepository extends BaseRepository<ISetting> {
   constructor() {

@@ -1,4 +1,4 @@
-import { createCrudRoutes } from './routeFactory.ts';
-import { wishlistController } from '../controllers/WishlistController.ts';
+import { createCrudRoutes } from './routeFactory';
+import { wishlistController } from '../controllers/WishlistController';
 
 export const wishlistRoutes = createCrudRoutes(wishlistController);

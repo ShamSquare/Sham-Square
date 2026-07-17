@@ -5,8 +5,8 @@
 
 import admin from 'firebase-admin';
 import { Message, MulticastMessage, Messaging } from 'firebase-admin/messaging';
-import firebaseConfig from '../config/firebase.config.ts';
-import logger from '../utils/logger.util.ts';
+import firebaseConfig from '../config/firebase.config';
+import logger from '../utils/logger.util';
 
 export interface IPushNotificationPayload {
   title: string;

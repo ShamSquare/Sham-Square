@@ -3,7 +3,7 @@
  * Handles email verification and notifications
  */
 
-import envConfig from '../config/env.config.ts';
+import envConfig from '../config/env.config';
 
 interface EmailProvider {
   sendEmail(to: string, subject: string, html: string): Promise<{ success: boolean; error?: string }>;

@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.ts';
-import type { INotification } from '../models/index.ts';
+import { BaseRepository } from './BaseRepository';
+import type { INotification } from '../models/index';
 
 export class NotificationRepository extends BaseRepository<INotification> {
   constructor() {

@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.ts';
-import type { IWebUser } from '../models/WebUser.ts';
+import { BaseRepository } from './BaseRepository';
+import type { IWebUser } from '../models/WebUser';
 
 export class WebUserRepository extends BaseRepository<IWebUser> {
   constructor() {

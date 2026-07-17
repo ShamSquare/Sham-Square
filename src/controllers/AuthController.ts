@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { userService, roleService } from '../services/index.ts';
-import jwtUtil from '../utils/jwt.util.ts';
-import passwordUtil from '../utils/password.util.ts';
-import { AppError } from '../utils/app-error.util.ts';
-import { RoleName } from '../database/enums/index.ts';
-import { BaseController } from './BaseController.ts';
+import { userService, roleService } from '../services/index';
+import jwtUtil from '../utils/jwt.util';
+import passwordUtil from '../utils/password.util';
+import { AppError } from '../utils/app-error.util';
+import { RoleName } from '../database/enums/index';
+import { BaseController } from './BaseController';
 
 interface IResetRecord {
   code: string;

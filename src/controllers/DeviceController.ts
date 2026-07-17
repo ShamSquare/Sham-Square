@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import deviceUtil from '../utils/deviceToken.util.ts';
-import { AppError } from '../utils/app-error.util.ts';
-import { BaseController } from './BaseController.ts';
+import deviceUtil from '../utils/deviceToken.util';
+import { AppError } from '../utils/app-error.util';
+import { BaseController } from './BaseController';
 
 export class DeviceController extends BaseController {
   async register(req: Request, res: Response) {

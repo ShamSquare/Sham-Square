@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.ts';
-import { couponService } from '../services/index.ts';
-import type { ICoupon } from '../database/models/index.ts';
+import { CrudController } from './CrudController';
+import { couponService } from '../services/index';
+import type { ICoupon } from '../database/models/index';
 
 export class CouponController extends CrudController<ICoupon> {
   constructor() {

@@ -3,24 +3,24 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 //  env.config.ts calls dotenv.config() as its top-level side-effect.
 //  Importing it here guarantees .env is loaded before anything else runs.
-import './config/env.config.ts';
+import './config/env.config';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 2. Logger  (uses env vars via lazy getter — safe after dotenv is loaded)
 // ═══════════════════════════════════════════════════════════════════════════════
-import logger from './utils/logger.util.ts';
+import logger from './utils/logger.util';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 3. Config & DB
 // ═══════════════════════════════════════════════════════════════════════════════
-import env from './config/env.config.ts';
-import { connectDatabase, disconnectDatabase } from './database/connection.ts';
+import env from './config/env.config';
+import { connectDatabase, disconnectDatabase } from './database/connection';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 4. Express app  (routes, middleware, swagger — all registered here)
 // ═══════════════════════════════════════════════════════════════════════════════
-import app from './app.ts';
-import { realtimeService } from './services/RealtimeService.ts';
+import app from './app';
+import { realtimeService } from './services/RealtimeService';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 5. Global error handlers  (catch anything that slips through)

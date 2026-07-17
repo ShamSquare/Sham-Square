@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { fileUploadController } from '../controllers/FileUploadController.ts';
-import { asyncHandler } from '../controllers/asyncHandler.ts';
+import { fileUploadController } from '../controllers/FileUploadController';
+import { asyncHandler } from '../controllers/asyncHandler';
 import multer from 'multer';
 
 const router = Router();

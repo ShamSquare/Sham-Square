@@ -5,9 +5,9 @@
  */
 
 import { Router } from 'express';
-import { otpController } from '../controllers/OtpController.ts';
-import { asyncHandler } from '../controllers/asyncHandler.ts';
-import { otpSendLimiter, otpVerifyLimiter } from '../middlewares/rateLimiter.middleware.ts';
+import { otpController } from '../controllers/OtpController';
+import { asyncHandler } from '../controllers/asyncHandler';
+import { otpSendLimiter, otpVerifyLimiter } from '../middlewares/rateLimiter.middleware';
 
 const router = Router();
 

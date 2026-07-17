@@ -1,4 +1,4 @@
-import { OrderStatus } from '../enums/index.ts';
+import { OrderStatus } from '../enums/index';
 
 export interface IOrderDelivery {
   agentId?: string | null;

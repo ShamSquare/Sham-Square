@@ -1,4 +1,4 @@
-import { RoleName } from '../enums/index.ts';
+import { RoleName } from '../enums/index';
 
 export interface IPermission {
   resource: string;

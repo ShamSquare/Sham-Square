@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import envConfig from './env.config.ts';
-import logger from '../utils/logger.util.ts';
+import envConfig from './env.config';
+import logger from '../utils/logger.util';
 
 class SupabaseConfig {
   private client: SupabaseClient | null = null;

@@ -1,4 +1,4 @@
-import { OrderStatus, TrackingEventSource } from '../enums/index.ts';
+import { OrderStatus, TrackingEventSource } from '../enums/index';
 
 export interface IOrderTracking {
   id: string;

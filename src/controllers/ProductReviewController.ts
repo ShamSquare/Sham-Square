@@ -1,6 +1,6 @@
-import { CrudController } from './CrudController.ts';
-import { productReviewService } from '../services/index.ts';
-import type { IProductReview } from '../database/models/index.ts';
+import { CrudController } from './CrudController';
+import { productReviewService } from '../services/index';
+import type { IProductReview } from '../database/models/index';
 
 export class ProductReviewController extends CrudController<IProductReview> {
   constructor() {

@@ -4,9 +4,9 @@
  */
 
 import { Request, Response } from 'express';
-import { otpService } from '../services/OtpService.ts';
-import { BaseController } from './BaseController.ts';
-import { AppError } from '../utils/app-error.util.ts';
+import { otpService } from '../services/OtpService';
+import { BaseController } from './BaseController';
+import { AppError } from '../utils/app-error.util';
 
 export class OtpController extends BaseController {
   /**

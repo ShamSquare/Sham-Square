@@ -1,4 +1,4 @@
-import { AUDIT_ACTION_VALUES } from '../enums/index.ts';
+import { AUDIT_ACTION_VALUES } from '../enums/index';
 
 export interface IAuditLog {
   id: string;

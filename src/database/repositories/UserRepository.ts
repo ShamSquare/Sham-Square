@@ -1,5 +1,5 @@
-import { BaseRepository } from './BaseRepository.ts';
-import type { IUser } from '../models/index.ts';
+import { BaseRepository } from './BaseRepository';
+import type { IUser } from '../models/index';
 
 export class UserRepository extends BaseRepository<IUser> {
   constructor() {
