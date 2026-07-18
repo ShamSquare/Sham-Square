@@ -44,13 +44,16 @@ export class DepartmentController extends CrudController<IDepartment> {
   async create(req: any, res: any) {
     const { name, nameAr, description, adminIds } = req.body;
 
-    if (!name || !nameAr) {
-      throw new AppError('Name and Arabic name are required', 400);
+    if (!name || !name.trim()) {
+      throw new AppError('Department name is required', 400, 'VALIDATION_ERROR');
+    }
+    if (!nameAr || !nameAr.trim()) {
+      throw new AppError('Department Arabic name is required', 400, 'VALIDATION_ERROR');
     }
 
     const department = await this.service.create({
-      name,
-      nameAr,
+      name: name.trim(),
+      nameAr: nameAr.trim(),
       description,
       adminIds: adminIds || [],
     });
@@ -58,20 +61,40 @@ export class DepartmentController extends CrudController<IDepartment> {
     return this.sendCreated(res, department);
   }
 
+  async getById(req: any, res: any) {
+    const item = await this.service.getById(req.params.id);
+    if (!item) {
+      return this.sendError(res, 'Department not found', 404);
+    }
+    return this.sendSuccess(res, item);
+  }
+
   async update(req: any, res: any) {
     const { name, nameAr, description, adminIds } = req.body;
-    const updated = await this.service.updateById(req.params.id, {
-      name,
-      nameAr,
-      description,
-      adminIds,
-    });
+
+    const updateData: Partial<IDepartment> = {};
+    if (name !== undefined) updateData.name = name;
+    if (nameAr !== undefined) updateData.nameAr = nameAr;
+    if (description !== undefined) updateData.description = description;
+    if (adminIds !== undefined) updateData.adminIds = adminIds;
+
+    const updated = await this.service.updateById(req.params.id, updateData);
 
     if (!updated) {
-      return this.sendError(res, 'Not found', 404);
+      return this.sendError(res, 'Department not found', 404);
     }
 
     return this.sendSuccess(res, updated);
+  }
+
+  async remove(req: any, res: any) {
+    const item = await this.service.getById(req.params.id);
+    if (!item) {
+      return this.sendError(res, 'Department not found', 404);
+    }
+
+    await this.service.deleteById(req.params.id);
+    return this.sendNoContent(res);
   }
 }
 

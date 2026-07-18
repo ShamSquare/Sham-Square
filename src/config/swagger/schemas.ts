@@ -909,6 +909,58 @@ export const schemas: Record<string, object> = {
     required: ['_id', 'email', 'firstName', 'lastName'],
   },
 
+  Department: {
+    type: 'object',
+    properties: {
+      _id: { type: 'string' },
+      name: { type: 'string', maxLength: 200, example: 'Electronics' },
+      nameAr: { type: 'string', maxLength: 200, example: 'إلكترونيات' },
+      description: { type: 'string', maxLength: 2000 },
+      adminIds: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Array of admin user IDs',
+      },
+      productCount: { type: 'integer', minimum: 0, example: 0 },
+      orderCount: { type: 'integer', minimum: 0, example: 0 },
+      revenue: { type: 'number', minimum: 0, example: 0 },
+      isActive: { type: 'boolean' },
+      isDeleted: { type: 'boolean' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+    },
+    required: ['name', 'nameAr'],
+  },
+
+  CreateDepartmentDto: {
+    type: 'object',
+    required: ['name', 'nameAr'],
+    properties: {
+      name: { type: 'string', maxLength: 200, example: 'Electronics', description: 'Department name' },
+      nameAr: { type: 'string', maxLength: 200, example: 'إلكترونيات', description: 'Department name in Arabic' },
+      description: { type: 'string', maxLength: 2000, description: 'Department description' },
+      adminIds: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Array of user IDs who administer this department',
+      },
+    },
+  },
+
+  UpdateDepartmentDto: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', maxLength: 200, example: 'Electronics', description: 'Department name' },
+      nameAr: { type: 'string', maxLength: 200, example: 'إلكترونيات', description: 'Department name in Arabic' },
+      description: { type: 'string', maxLength: 2000, description: 'Department description' },
+      adminIds: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Array of user IDs who administer this department',
+      },
+    },
+  },
+
   AuthMessageResponse: {
     type: 'object',
     properties: {

@@ -2061,6 +2061,192 @@
   *           application/json:
   *             schema:
   *               $ref: '#/components/schemas/ApiErrorResponse'
+  *
+  * # Departments
+  * @openapi
+  * /api/v1/departments:
+  *   get:
+  *     tags: [Departments]
+  *     summary: Get all departments
+  *     description: Retrieve a paginated list of departments with optional search by name or Arabic name
+  *     security:
+  *       - bearerAuth: []
+  *     parameters:
+  *       - in: query
+  *         name: page
+  *         schema:
+  *           type: integer
+  *           default: 1
+  *         description: Page number
+  *       - in: query
+  *         name: limit
+  *         schema:
+  *           type: integer
+  *           default: 10
+  *         description: Items per page
+  *       - in: query
+  *         name: search
+  *         schema:
+  *           type: string
+  *         description: Search term for name or Arabic name
+  *     responses:
+  *       200:
+  *         description: List of departments with pagination
+  *         content:
+  *           application/json:
+  *             schema:
+  *               type: object
+  *               properties:
+  *                 success:
+  *                   type: boolean
+  *                 data:
+  *                   type: array
+  *                   items:
+  *                     $ref: '#/components/schemas/Department'
+  *                 pagination:
+  *                   $ref: '#/components/schemas/Pagination'
+  *   post:
+  *     tags: [Departments]
+  *     summary: Create a new department
+  *     description: Create a department with a unique name and Arabic name
+  *     security:
+  *       - bearerAuth: []
+  *     requestBody:
+  *       required: true
+  *       content:
+  *         application/json:
+  *           schema:
+  *             $ref: '#/components/schemas/CreateDepartmentDto'
+  *     responses:
+  *       201:
+  *         description: Department created successfully
+  *         content:
+  *           application/json:
+  *             schema:
+  *               type: object
+  *               properties:
+  *                 success:
+  *                   type: boolean
+  *                 data:
+  *                   $ref: '#/components/schemas/Department'
+  *       400:
+  *         description: Validation error
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       409:
+  *         description: Department with this name already exists
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  * /api/v1/departments/{id}:
+  *   get:
+  *     tags: [Departments]
+  *     summary: Get department by ID
+  *     description: Retrieve a single department by its UUID
+  *     security:
+  *       - bearerAuth: []
+  *     parameters:
+  *       - in: path
+  *         name: id
+  *         required: true
+  *         schema:
+  *           type: string
+  *           format: uuid
+  *         description: Department UUID
+  *     responses:
+  *       200:
+  *         description: Department found
+  *         content:
+  *           application/json:
+  *             schema:
+  *               type: object
+  *               properties:
+  *                 success:
+  *                   type: boolean
+  *                 data:
+  *                   $ref: '#/components/schemas/Department'
+  *       404:
+  *         description: Department not found
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *   put:
+  *     tags: [Departments]
+  *     summary: Update department
+  *     description: Update department fields. Only provided fields will be updated.
+  *     security:
+  *       - bearerAuth: []
+  *     parameters:
+  *       - in: path
+  *         name: id
+  *         required: true
+  *         schema:
+  *           type: string
+  *           format: uuid
+  *         description: Department UUID
+  *     requestBody:
+  *       required: true
+  *       content:
+  *         application/json:
+  *           schema:
+  *             $ref: '#/components/schemas/UpdateDepartmentDto'
+  *     responses:
+  *       200:
+  *         description: Department updated successfully
+  *         content:
+  *           application/json:
+  *             schema:
+  *               type: object
+  *               properties:
+  *                 success:
+  *                   type: boolean
+  *                 data:
+  *                   $ref: '#/components/schemas/Department'
+  *       400:
+  *         description: Validation error
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       404:
+  *         description: Department not found
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *       409:
+  *         description: Department with this name already exists
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
+  *   delete:
+  *     tags: [Departments]
+  *     summary: Delete department
+  *     description: Soft delete a department by ID
+  *     security:
+  *       - bearerAuth: []
+  *     parameters:
+  *       - in: path
+  *         name: id
+  *         required: true
+  *         schema:
+  *           type: string
+  *           format: uuid
+  *         description: Department UUID
+  *     responses:
+  *       204:
+  *         description: Department deleted (no content)
+  *       404:
+  *         description: Department not found
+  *         content:
+  *           application/json:
+  *             schema:
+  *               $ref: '#/components/schemas/ApiErrorResponse'
   */
 
 export {};
