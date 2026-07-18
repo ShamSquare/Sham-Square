@@ -1,8 +1,9 @@
 import { CrudController } from './CrudController';
-import { userService } from '../services/index';
+import { userService, roleService } from '../services/index';
 import type { IUser } from '../database/models/index';
 import { AppError } from '../utils/app-error.util';
 import { hashPassword } from '../utils/password.util';
+import { RoleName } from '../database/enums/index';
 
 export class UserController extends CrudController<IUser> {
   constructor() {
@@ -10,7 +11,7 @@ export class UserController extends CrudController<IUser> {
   }
 
   async create(req: any, res: any) {
-    const { password, ...userData } = req.body;
+    const { password, roleId, email, firstName, lastName, phone, ...userData } = req.body;
 
     if (!password) {
       throw new AppError('Password is required', 400);
@@ -20,9 +21,29 @@ export class UserController extends CrudController<IUser> {
       throw new AppError('Password must be at least 8 characters', 400);
     }
 
+    if (!email) {
+      throw new AppError('Email is required', 400);
+    }
+
+    // Auto-assign default USER role if no roleId provided
+    let assignedRoleId = roleId;
+    if (!assignedRoleId) {
+      const defaultRole = await roleService.findOne({ name: RoleName.USER } as any);
+      if (defaultRole) {
+        assignedRoleId = defaultRole.id;
+      } else {
+        throw new AppError('Default role not found. Please configure roles first or provide a roleId.', 500);
+      }
+    }
+
     const passwordHash = hashPassword(password);
     const created = await userService.create({
       ...userData,
+      email,
+      firstName: firstName || '',
+      lastName: lastName || '',
+      phone,
+      roleId: assignedRoleId,
       passwordHash,
     });
 
