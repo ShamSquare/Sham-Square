@@ -3,6 +3,7 @@ export interface IDepartment {
   name: string;
   nameAr: string;
   description?: string;
+  supervisorId?: string | null;
   adminIds: string[];
   productCount: number;
   orderCount: number;

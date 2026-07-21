@@ -35,6 +35,7 @@ export class DepartmentService extends BaseService<IDepartment> {
       name,
       nameAr,
       description: data.description || '',
+      supervisorId: data.supervisorId || null,
       adminIds: data.adminIds || [],
       productCount: 0,
       orderCount: 0,
@@ -70,6 +71,11 @@ export class DepartmentService extends BaseService<IDepartment> {
       if (existingByNameAr && existingByNameAr.id !== id) {
         throw new AppError('A department with this Arabic name already exists', 409, 'CONFLICT');
       }
+    }
+
+    // Ensure supervisorId is explicitly set to null if empty string
+    if (data.supervisorId !== undefined && data.supervisorId === '') {
+      data.supervisorId = null;
     }
 
     return super.updateById(id, data);

@@ -15,8 +15,8 @@ export interface ICoupon {
   applicability: CouponApplicability;
   applicableCategoryIds: string[];
   applicableProductIds: string[];
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   isActive: boolean;
   vendorId?: string | null;
   isDeleted: boolean;

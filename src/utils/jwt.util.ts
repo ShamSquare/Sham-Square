@@ -4,9 +4,9 @@
  */
 
 import jwt from 'jsonwebtoken';
-import jwtConfig, { ITokenPayload } from '../config/jwt.config;
-import logger from './logger.util;
-import { AppError } from './app-error.util;
+import jwtConfig, { ITokenPayload } from '../config/jwt.config';
+import logger from './logger.util';
+import { AppError } from './app-error.util';
 /**
  * Generate access token
  */

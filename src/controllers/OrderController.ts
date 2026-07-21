@@ -4,6 +4,7 @@ import type { IOrder } from '../database/models/index';
 import { OrderStatus } from '../database/enums/index';
 import { AppError } from '../utils/app-error.util';
 import { realtimeService } from '../services/RealtimeService';
+import { isValidUUID } from '../utils/uuid.util';
 
 type AuthReq = import('../middlewares/auth.middleware').AuthRequest;
 
@@ -41,8 +42,15 @@ export class OrderController extends CrudController<IOrder> {
   }
 
   async update(req: AuthReq, res: any) {
+    // Validate UUID format
+    if (!isValidUUID(req.params.id)) {
+      return this.sendError(res, 'Invalid order ID', 400);
+    }
+
     const updated = await orderService.updateById(req.params.id, req.body as any);
-    if (!updated) throw new AppError('Order not found', 404);
+    if (!updated) {
+      return this.sendError(res, 'Order not found', 404);
+    }
 
     if ((updated as any).userId) {
       realtimeService.emitToUser(String((updated as any).userId), 'order:updated', updated);

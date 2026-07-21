@@ -337,6 +337,7 @@ create table if not exists departments (
   name            text not null,
   name_ar         text not null,
   description     text not null default '',
+  supervisor_id   uuid references users(id) on delete set null,
   admin_ids       uuid[] not null default '{}',
   product_count   integer not null default 0,
   order_count     integer not null default 0,
@@ -358,6 +359,9 @@ create table if not exists departments (
     (is_deleted = true and deleted_at is not null)
   )
 );
+
+comment on column departments.supervisor_id is 'Foreign key to users table - the department supervisor';
+create index idx_departments_supervisor on departments (supervisor_id) where supervisor_id is not null;
 
 comment on table departments is 'Organizational departments for multi-tenant vendor management';
 comment on column departments.admin_ids is 'Array of user IDs who administer this department';
@@ -496,6 +500,7 @@ create table if not exists products (
   thumbnail         text,
   price_range       jsonb not null default '{"min":0,"max":0,"currency":"USD"}'::jsonb,
   attributes        jsonb not null default '{}'::jsonb,
+  stock             integer not null default 0,
   status            product_status not null default 'DRAFT',
   is_featured       boolean not null default false,
   rating            jsonb not null default '{"average":0,"count":0,"distribution":{"one":0,"two":0,"three":0,"four":0,"five":0}}'::jsonb,
@@ -510,11 +515,15 @@ create table if not exists products (
   updated_at        timestamptz not null default now(),
 
   constraint chk_products_total_sold check (total_sold >= 0),
+  constraint chk_products_stock check (stock >= 0),
   constraint chk_products_deleted_at check (
     (is_deleted = false and deleted_at is null) or
     (is_deleted = true and deleted_at is not null)
   )
 );
+
+comment on column products.stock is 'Current inventory stock quantity';
+create index idx_products_stock on products (stock) where is_deleted = false;
 
 comment on column products.price_range is 'Price range: {min, max, currency}';
 comment on column products.rating is 'Rating aggregate: {average, count, distribution: {one..five}}';

@@ -42,7 +42,7 @@ export class DepartmentController extends CrudController<IDepartment> {
   }
 
   async create(req: any, res: any) {
-    const { name, nameAr, description, adminIds } = req.body;
+    const { name, nameAr, description, adminIds, supervisorId } = req.body;
 
     if (!name || !name.trim()) {
       throw new AppError('Department name is required', 400, 'VALIDATION_ERROR');
@@ -56,6 +56,7 @@ export class DepartmentController extends CrudController<IDepartment> {
       nameAr: nameAr.trim(),
       description,
       adminIds: adminIds || [],
+      supervisorId: supervisorId || null,
     });
 
     return this.sendCreated(res, department);
@@ -70,13 +71,14 @@ export class DepartmentController extends CrudController<IDepartment> {
   }
 
   async update(req: any, res: any) {
-    const { name, nameAr, description, adminIds } = req.body;
+    const { name, nameAr, description, adminIds, supervisorId } = req.body;
 
     const updateData: Partial<IDepartment> = {};
     if (name !== undefined) updateData.name = name;
     if (nameAr !== undefined) updateData.nameAr = nameAr;
     if (description !== undefined) updateData.description = description;
     if (adminIds !== undefined) updateData.adminIds = adminIds;
+    if (supervisorId !== undefined) updateData.supervisorId = supervisorId || null;
 
     const updated = await this.service.updateById(req.params.id, updateData);
 

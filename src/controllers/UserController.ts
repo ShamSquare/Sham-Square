@@ -4,6 +4,7 @@ import type { IUser } from '../database/models/index';
 import { AppError } from '../utils/app-error.util';
 import { hashPassword } from '../utils/password.util';
 import { RoleName } from '../database/enums/index';
+import { isValidUUID } from '../utils/uuid.util';
 
 export class UserController extends CrudController<IUser> {
   constructor() {
@@ -51,6 +52,11 @@ export class UserController extends CrudController<IUser> {
   }
 
   async update(req: any, res: any) {
+    // Validate UUID format
+    if (!isValidUUID(req.params.id)) {
+      return this.sendError(res, 'Invalid user ID', 400);
+    }
+
     const { password, ...userData } = req.body;
 
     if (password) {
@@ -62,7 +68,7 @@ export class UserController extends CrudController<IUser> {
 
     const updated = await userService.updateById(req.params.id, userData);
     if (!updated) {
-      return this.sendError(res, 'Not found', 404);
+      return this.sendError(res, 'User not found', 404);
     }
     return this.sendSuccess(res, updated);
   }
