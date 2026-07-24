@@ -24,6 +24,8 @@ export function snakeCaseToCamelCase<T>(data: T): T {
       
       if (key === 'id') {
         newKey = '_id';
+      } else if (key === 'sub_category') {
+        newKey = 'sub_category';
       } else {
         newKey = key.replace(/(_\w)/g, (match) => match[1].toUpperCase());
       }

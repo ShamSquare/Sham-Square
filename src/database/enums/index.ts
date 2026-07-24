@@ -187,6 +187,19 @@ export enum TrackingEventSource {
   CUSTOMER = 'CUSTOMER',
 }
 
+export enum Category {
+  AL_DUHA_LIBRARY = 'AL_DUHA_LIBRARY',
+  CROCHET = 'CROCHET',
+  ANIME = 'ANIME',
+  HANDMADE = 'HANDMADE',
+}
+
+export enum SubCategory {
+  LIBRARY_PRODUCTS = 'LIBRARY_PRODUCTS',
+  PRINTING_SERVICES = 'PRINTING_SERVICES',
+  NO_SUB = 'NO_SUB',
+}
+
 /** Enum arrays derived from TypeScript enums */
 export const ROLE_NAME_VALUES = Object.values(RoleName);
 export const USER_STATUS_VALUES = Object.values(UserStatus);
@@ -211,3 +224,5 @@ export const AUDIT_ACTION_VALUES = Object.values(AuditAction);
 export const ADDRESS_LABEL_VALUES = Object.values(AddressLabel);
 export const SETTING_GROUP_VALUES = Object.values(SettingGroup);
 export const TRACKING_EVENT_SOURCE_VALUES = Object.values(TrackingEventSource);
+export const CATEGORY_VALUES = Object.values(Category);
+export const SUB_CATEGORY_VALUES = Object.values(SubCategory);

@@ -4,8 +4,6 @@ export { RoleService, roleService } from './RoleService';
 export { UserService, userService } from './UserService';
 export { WebAuthService, webAuthService } from './WebAuthService';
 export { AddressService, addressService } from './AddressService';
-export { CategoryService, categoryService } from './CategoryService';
-export { SubCategoryService, subCategoryService } from './SubCategoryService';
 export { ProductService, productService } from './ProductService';
 export { ProductVariantService, productVariantService } from './ProductVariantService';
 export { ProductReviewService, productReviewService } from './ProductReviewService';

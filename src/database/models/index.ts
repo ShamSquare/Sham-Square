@@ -5,10 +5,6 @@ export type { IWebUser } from './WebUser';
 
 export type { IAddress } from './Address';
 
-export type { ICategory } from './Category';
-
-export type { ISubCategory } from './SubCategory';
-
 export type { IProduct, IProductRatingAggregate } from './Product';
 
 export type { IProductVariant, IProductVariantInventory } from './ProductVariant';

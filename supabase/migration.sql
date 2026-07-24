@@ -13,7 +13,7 @@ create extension if not exists "pgcrypto";
 -- 1. ENUMS (PostgreSQL custom types)
 -- =============================================================================
 
-create type user_status as enum (
+create type  user_status as enum (
   'ACTIVE',
   'INACTIVE',
   'SUSPENDED',
@@ -289,34 +289,36 @@ create index idx_users_phone on users (phone) where phone is not null and is_del
 -- from mobile users to avoid conflicts and allow separate auth flows.
 -- ---------------------------------------------------------------------------
 create table if not exists web_users (
-  id              uuid primary key default gen_random_uuid(),
-  email           text not null unique,
-  password_hash   text not null,
-  first_name      text not null,
-  last_name       text not null,
-  avatar          text,
-  phone           text,
-  role            text not null default 'USER',
-  status          user_status not null default 'ACTIVE',
-  email_verified  boolean not null default false,
-  phone_verified  boolean not null default false,
-  last_login_at   timestamptz,
-  is_deleted      boolean not null default false,
-  deleted_at      timestamptz,
-  deleted_by      uuid,
-  created_by      uuid,
-  updated_by      uuid,
-  created_at      timestamptz not null default now(),
-  updated_at      timestamptz not null default now(),
+   id              uuid primary key default gen_random_uuid(),
+   email           text not null unique,
+   password_hash   text not null,
+   first_name      text not null,
+   last_name       text not null,
+   avatar          text,
+   phone           text,
+   role            text not null default 'USER',
+   role_type       text not null default 'user',
+   department_id   uuid references departments(id) on delete set null,
+   status          user_status not null default 'ACTIVE',
+   email_verified  boolean not null default false,
+   phone_verified  boolean not null default false,
+   last_login_at   timestamptz,
+   is_deleted      boolean not null default false,
+   deleted_at      timestamptz,
+   deleted_by      uuid,
+   created_by      uuid,
+   updated_by      uuid,
+   created_at      timestamptz not null default now(),
+   updated_at      timestamptz not null default now(),
 
-  -- Version column for optimistic locking
-  version         integer not null default 1,
+   -- Version column for optimistic locking
+   version         integer not null default 1,
 
-  -- Ensure soft-delete constraint
-  constraint chk_web_users_deleted_at check (
-    (is_deleted = false and deleted_at is null) or
-    (is_deleted = true and deleted_at is not null)
-  )
+   -- Ensure soft-delete constraint
+   constraint chk_web_users_deleted_at check (
+     (is_deleted = false and deleted_at is null) or
+     (is_deleted = true and deleted_at is not null)
+   )
 );
 
 comment on table web_users is 'Website users with independent authentication from mobile users';
@@ -412,7 +414,9 @@ create index idx_addresses_default on addresses (user_id, is_default) where is_d
 -- ---------------------------------------------------------------------------
 -- 2.6. CATEGORIES
 -- ---------------------------------------------------------------------------
--- Product categories with SEO metadata and vendor scoping.
+-- NOTE: Categories are now fixed enums, not a managed table.
+-- This table is kept for backward compatibility during migration.
+-- It will be removed after data migration.
 -- ---------------------------------------------------------------------------
 create table if not exists categories (
   id            uuid primary key default gen_random_uuid(),
@@ -447,7 +451,9 @@ create index idx_categories_slug on categories (slug) where is_deleted = false;
 -- ---------------------------------------------------------------------------
 -- 2.7. SUBCATEGORIES
 -- ---------------------------------------------------------------------------
--- Subcategories belong to a parent category with a unique slug per category.
+-- NOTE: SubCategories are now fixed enums, not a managed table.
+-- This table is kept for backward compatibility during migration.
+-- It will be removed after data migration.
 -- ---------------------------------------------------------------------------
 create table if not exists subcategories (
   id            uuid primary key default gen_random_uuid(),
@@ -480,15 +486,33 @@ create table if not exists subcategories (
 create index idx_subcategories_active on subcategories (category_id, is_active, sort_order, is_deleted);
 
 -- ---------------------------------------------------------------------------
+-- MIGRATION FIX: ensure sub_category accepts NULLs
+-- This handles databases that were created with an older migration where
+-- sub_category was NOT NULL.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_name = 'products'
+      and column_name = 'sub_category'
+      and is_nullable = 'NO'
+  ) then
+    alter table products alter column sub_category drop not null;
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- 2.8. PRODUCTS
 -- ---------------------------------------------------------------------------
 -- Core product catalog with rich metadata, rating aggregation, and
--- category/subcategory assignment.
+-- fixed category/subcategory assignment using enums.
 -- ---------------------------------------------------------------------------
 create table if not exists products (
   id                uuid primary key default gen_random_uuid(),
-  category_id       uuid not null references categories(id) on delete restrict,
-  sub_category_id   uuid not null references subcategories(id) on delete restrict,
+  category          text not null,
+  sub_category      text null,
   vendor_id         uuid,
   name              text not null,
   slug              text not null unique,
@@ -496,8 +520,10 @@ create table if not exists products (
   short_description text not null default '',
   brand             text,
   tags              text[] not null default '{}',
+  image             text,
   images            text[] not null default '{}',
   thumbnail         text,
+  price             numeric(12,2) not null default 0,
   price_range       jsonb not null default '{"min":0,"max":0,"currency":"USD"}'::jsonb,
   attributes        jsonb not null default '{}'::jsonb,
   stock             integer not null default 0,
@@ -516,12 +542,21 @@ create table if not exists products (
 
   constraint chk_products_total_sold check (total_sold >= 0),
   constraint chk_products_stock check (stock >= 0),
+  constraint chk_products_price check (price >= 0),
   constraint chk_products_deleted_at check (
     (is_deleted = false and deleted_at is null) or
     (is_deleted = true and deleted_at is not null)
+  ),
+
+  constraint chk_products_category check (category in ('AL_DUHA_LIBRARY', 'CROCHET', 'ANIME', 'HANDMADE')),
+  constraint chk_products_sub_category check (
+    (sub_category is null) or
+    (sub_category in ('LIBRARY_PRODUCTS', 'PRINTING_SERVICES', 'NO_SUB'))
   )
 );
 
+comment on column products.category is 'Fixed category enum: AL_DUHA_LIBRARY, CROCHET, ANIME, HANDMADE';
+comment on column products.sub_category is 'Fixed subcategory enum (only for AL_DUHA_LIBRARY): LIBRARY_PRODUCTS, PRINTING_SERVICES';
 comment on column products.stock is 'Current inventory stock quantity';
 create index idx_products_stock on products (stock) where is_deleted = false;
 
@@ -529,7 +564,7 @@ comment on column products.price_range is 'Price range: {min, max, currency}';
 comment on column products.rating is 'Rating aggregate: {average, count, distribution: {one..five}}';
 comment on column products.attributes is 'Key-value product attributes (e.g., color, size, material)';
 
-create index idx_products_category on products (category_id, sub_category_id, status, is_deleted);
+create index idx_products_category on products (category, status, is_deleted);
 create index idx_products_featured on products (status, is_featured) where is_deleted = false;
 create index idx_products_created on products (created_at desc);
 create index idx_products_sold on products (total_sold desc);

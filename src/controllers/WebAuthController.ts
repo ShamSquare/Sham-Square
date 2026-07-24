@@ -267,9 +267,16 @@ export class WebAuthController extends BaseController {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      avatar: user.avatar,
       phone: user.phone,
-      phoneVerified: user.phoneVerified,
+      role: user.role,
+      roleType: user.roleType,
+      departmentId: user.departmentId,
+      status: user.status,
       emailVerified: user.emailVerified,
+      phoneVerified: user.phoneVerified,
+      lastLoginAt: user.lastLoginAt,
+      createdAt: user.createdAt,
     };
 
     return this.sendSuccess(res, { user: userResponse, token: tokens.accessToken });
@@ -281,7 +288,7 @@ export class WebAuthController extends BaseController {
     const user = await webAuthService.getUserById(userId);
     if (!user) throw new AppError('User not found', 404);
 
-    const userResponse = {
+const userResponse = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -289,6 +296,8 @@ export class WebAuthController extends BaseController {
       avatar: user.avatar,
       phone: user.phone,
       role: user.role,
+      roleType: user.roleType,
+      departmentId: user.departmentId,
       status: user.status,
       emailVerified: user.emailVerified,
       phoneVerified: user.phoneVerified,

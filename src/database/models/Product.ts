@@ -1,4 +1,4 @@
-import { ProductStatus } from '../enums/index';
+import { ProductStatus, Category } from '../enums/index';
 
 export interface IProductRatingAggregate {
   average: number;
@@ -14,8 +14,8 @@ export interface IProductRatingAggregate {
 
 export interface IProduct {
   id: string;
-  categoryId: string;
-  subCategoryId: string;
+  category: Category;
+  subCategory: string;
   vendorId?: string | null;
   name: string;
   slug: string;
@@ -23,13 +23,11 @@ export interface IProduct {
   shortDescription?: string;
   brand?: string;
   tags: string[];
-  images: string[];
+  stock: number;
+  price: number;
+  image?: string;
+  images?: string[];
   thumbnail?: string;
-  priceRange: {
-    min: number;
-    max: number;
-    currency: string;
-  };
   attributes: Map<string, string>;
   status: ProductStatus;
   isFeatured: boolean;

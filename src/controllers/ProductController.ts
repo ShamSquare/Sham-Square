@@ -3,8 +3,9 @@ import { productService } from '../services/index';
 import type { IProduct } from '../database/models/index';
 import { realtimeService } from '../services/RealtimeService';
 import { sanitizeUUIDFields, isValidUUID } from '../utils/uuid.util';
+import { Category, SubCategory } from '../database/enums/index';
 
-const UUID_FIELDS = ['categoryId', 'subCategoryId', 'vendorId', 'brandId', 'createdBy', 'updatedBy'];
+const UUID_FIELDS = ['vendorId', 'brandId', 'createdBy', 'updatedBy'];
 
 /**
  * Transform frontend product payload to match the database schema.
@@ -48,14 +49,28 @@ function transformProductPayload(data: Record<string, any>): Record<string, any>
     }
   }
 
-  // Image (text column in DB)
-  if (data.image) {
-    transformed.image = String(data.image);
+  // Images (text array column in DB)
+  if (data.images !== undefined) {
+    if (Array.isArray(data.images)) {
+      transformed.images = data.images.filter((url: any) => typeof url === 'string' && url.trim() !== '');
+    } else if (typeof data.images === 'string' && data.images.trim() !== '') {
+      transformed.images = [data.images.trim()];
+    }
   }
 
-  // isAvailable -> is_available (boolean column in DB)
-  if (data.isAvailable !== undefined) {
-    transformed.isAvailable = Boolean(data.isAvailable);
+  // Thumbnail (text column in DB)
+  if (data.thumbnail !== undefined && data.thumbnail !== null && String(data.thumbnail).trim() !== '') {
+    transformed.thumbnail = String(data.thumbnail).trim();
+  }
+
+  // Image (text column in DB)
+  if (data.image !== undefined && data.image !== null && String(data.image).trim() !== '') {
+    transformed.image = String(data.image).trim();
+  }
+
+  // Status (product_status enum in DB)
+  if (data.status !== undefined) {
+    transformed.status = String(data.status).toUpperCase();
   }
 
   // isFeatured -> is_featured (boolean column in DB)
@@ -63,16 +78,25 @@ function transformProductPayload(data: Record<string, any>): Record<string, any>
     transformed.isFeatured = Boolean(data.isFeatured);
   }
 
-  // category (text column in DB - category name)
-  if (data.category !== undefined) {
-    transformed.category = String(data.category).trim();
+  // Category (text column in DB - category enum value)
+  // Accept both "Category" (PascalCase from frontend) and "category" (camelCase)
+  const categoryField = data.Category !== undefined ? data.Category : data.category;
+  if (categoryField !== undefined) {
+    const categoryValue = String(categoryField).trim().toUpperCase();
+    if (Object.values(Category).includes(categoryValue as Category)) {
+      transformed.category = categoryValue;
+    }
   }
 
-  // categoryId -> category_id (uuid column in DB)
-  if (data.categoryId !== undefined) transformed.categoryId = data.categoryId;
-
-  // subCategoryId -> sub_category_id (uuid column in DB)
-  if (data.subCategoryId !== undefined) transformed.subCategoryId = data.subCategoryId;
+  // SubCategory (text column in DB - subcategory enum value)
+  // Accept both "SubCategory" (PascalCase from frontend) and "subCategory" (camelCase)
+  const subCategoryField = data.SubCategory !== undefined ? data.SubCategory : data.subCategory;
+  if (subCategoryField !== undefined && subCategoryField !== null && subCategoryField !== '') {
+    const subCategoryValue = String(subCategoryField).trim().toUpperCase();
+    if (Object.values(SubCategory).includes(subCategoryValue as SubCategory)) {
+      transformed.subCategory = subCategoryValue;
+    }
+  }
 
   // departmentId -> department_id (uuid column in DB)
   if (data.departmentId !== undefined) transformed.departmentId = data.departmentId;
@@ -87,18 +111,30 @@ function transformProductPayload(data: Record<string, any>): Record<string, any>
 function validateProductData(data: Record<string, any>, isUpdate = false): string[] {
   const errors: string[] = [];
 
+  // Normalize field names: accept both PascalCase (Category/SubCategory) and camelCase (category/subCategory)
+  const categoryField = data.Category !== undefined ? data.Category : data.category;
+  const subCategoryField = data.SubCategory !== undefined ? data.SubCategory : data.subCategory;
+
   if (!isUpdate) {
     // Required fields for creation
     if (!data.name || !String(data.name).trim()) {
       errors.push('اسم المنتج مطلوب');
     }
 
-    if (!data.categoryId || !isValidUUID(data.categoryId)) {
-      errors.push('معرف الفئة (categoryId) مطلوب ويجب أن يكون UUID صالح');
+    // Validate category is provided and is a valid enum value
+    if (!categoryField || !Object.values(Category).includes(String(categoryField).trim().toUpperCase() as Category)) {
+      errors.push('الفئة (Category) مطلوبة ويجب أن تكون قيمة صالحة');
     }
 
-    if (!data.subCategoryId || !isValidUUID(data.subCategoryId)) {
-      errors.push('معرف التصنيف الفرعي (subCategoryId) مطلوب ويجب أن يكون UUID صالح');
+    // Validate subCategory business rules
+    if (subCategoryField !== undefined && subCategoryField !== null && subCategoryField !== '') {
+      const catValue = categoryField ? String(categoryField).trim().toUpperCase() : null;
+      const subValue = String(subCategoryField).trim().toUpperCase();
+      if (catValue !== Category.AL_DUHA_LIBRARY && subValue !== SubCategory.NO_SUB) {
+        errors.push('التصنيف الفرعي (SubCategory) مسموح به فقط لفئة "Al-Duha Library"');
+      } else if (!Object.values(SubCategory).includes(subValue as SubCategory)) {
+        errors.push('قيمة التصنيف الفرعي (SubCategory) غير صالحة');
+      }
     }
 
     if (data.price === undefined || data.price === null || data.price === '' || isNaN(Number(data.price)) || Number(data.price) < 0) {
@@ -110,12 +146,22 @@ function validateProductData(data: Record<string, any>, isUpdate = false): strin
       errors.push('اسم المنتج لا يمكن أن يكون فارغاً');
     }
 
-    if (data.categoryId !== undefined && data.categoryId !== null && !isValidUUID(data.categoryId)) {
-      errors.push('معرف الفئة (categoryId) غير صالح');
+    // Validate category if provided
+    if (categoryField !== undefined && categoryField !== null && categoryField !== '') {
+      if (!Object.values(Category).includes(String(categoryField).trim().toUpperCase() as Category)) {
+        errors.push('قيمة الفئة (Category) غير صالحة');
+      }
     }
 
-    if (data.subCategoryId !== undefined && data.subCategoryId !== null && !isValidUUID(data.subCategoryId)) {
-      errors.push('معرف التصنيف الفرعي (subCategoryId) غير صالح');
+    // Validate subCategory if provided
+    if (subCategoryField !== undefined && subCategoryField !== null && subCategoryField !== '') {
+      const catValue = categoryField ? String(categoryField).trim().toUpperCase() : null;
+      const subValue = String(subCategoryField).trim().toUpperCase();
+      if (catValue !== Category.AL_DUHA_LIBRARY && subValue !== SubCategory.NO_SUB) {
+        errors.push('التصنيف الفرعي (SubCategory) مسموح به فقط لفئة "Al-Duha Library"');
+      } else if (!Object.values(SubCategory).includes(subValue as SubCategory)) {
+        errors.push('قيمة التصنيف الفرعي (SubCategory) غير صالحة');
+      }
     }
 
     if (data.price !== undefined && data.price !== null && data.price !== '' && (isNaN(Number(data.price)) || Number(data.price) < 0)) {
@@ -134,6 +180,7 @@ export class ProductController extends CrudController<IProduct> {
   async create(req: any, res: any) {
     try {
       const data = req.body || {};
+      console.log('Incoming Product Create', data);
 
       // Step 1: Validate raw input first (before transformation)
       const rawErrors = validateProductData(data, false);
@@ -147,12 +194,15 @@ export class ProductController extends CrudController<IProduct> {
 
       // Step 2: Transform frontend payload to DB schema
       const transformed = transformProductPayload(data);
+      console.log('Transformed Product Payload', transformed);
 
       // Step 3: Sanitize UUID fields (convert empty strings to null)
       const sanitized = sanitizeUUIDFields(transformed, UUID_FIELDS);
+      console.log('Sanitized Product Payload', sanitized);
 
       // Step 4: Create the product
       const created = await productService.create(sanitized);
+      console.log('Inserted Product', created);
       realtimeService.emitPublic('inventory:updated', { action: 'created', product: created });
       return this.sendCreated(res, created);
     } catch (error: any) {
@@ -175,6 +225,7 @@ export class ProductController extends CrudController<IProduct> {
       }
 
       const data = req.body || {};
+      console.log('Incoming Product Update', { id: req.params.id, data });
 
       // Step 1: Validate raw input first (before transformation)
       const rawErrors = validateProductData(data, true);
@@ -188,13 +239,16 @@ export class ProductController extends CrudController<IProduct> {
 
       // Step 2: Transform frontend payload to DB schema
       const transformed = transformProductPayload(data);
+      console.log('Transformed Product Update Payload', transformed);
 
       // Step 3: Sanitize UUID fields
       const sanitized = sanitizeUUIDFields(transformed, UUID_FIELDS);
+      console.log('Sanitized Product Update Payload', sanitized);
 
       // Step 4: Update the product
       const updated = await productService.updateById(req.params.id, sanitized);
       if (!updated) return this.sendError(res, 'Not found', 404);
+      console.log('Updated Product', updated);
 
       realtimeService.emitPublic('inventory:updated', { action: 'updated', product: updated });
       return this.sendSuccess(res, updated);

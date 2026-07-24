@@ -2,8 +2,6 @@ export { RoleRepository, roleRepository } from './RoleRepository';
 export { UserRepository, userRepository } from './UserRepository';
 export { WebUserRepository, webUserRepository } from './WebUserRepository';
 export { AddressRepository, addressRepository } from './AddressRepository';
-export { CategoryRepository, categoryRepository } from './CategoryRepository';
-export { SubCategoryRepository, subCategoryRepository } from './SubCategoryRepository';
 export { ProductRepository, productRepository } from './ProductRepository';
 export { ProductVariantRepository, productVariantRepository } from './ProductVariantRepository';
 export { ProductReviewRepository, productReviewRepository } from './ProductReviewRepository';

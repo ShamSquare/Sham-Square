@@ -20,7 +20,11 @@ function convertKeysToDb(obj: Record<string, any>): Record<string, any> {
 function convertKeysFromDb(obj: Record<string, any>): Record<string, any> {
   const result: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
-    result[snakeToCamel(key)] = value;
+    if (key === 'sub_category') {
+      result.sub_category = value;
+    } else {
+      result[snakeToCamel(key)] = value;
+    }
   }
   return result;
 }
@@ -35,13 +39,23 @@ export abstract class BaseRepository<T extends Record<string, any>> {
   }
 
   async create(data: Partial<T>): Promise<T> {
+    const dbData = convertKeysToDb(data);
+
+    console.log(`[BaseRepository.create] Table: ${this.tableName}`);
+    console.log("[BaseRepository.create] Before insert:", JSON.stringify(data, null, 2));
+    console.log("[BaseRepository.create] After convert:", JSON.stringify(dbData, null, 2));
+
     const { data: result, error } = await this.client
       .from(this.tableName)
-      .insert(convertKeysToDb(data))
+      .insert(dbData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error(`[BaseRepository.create] INSERT FAILED for table ${this.tableName}:`, error);
+      throw error;
+    }
+    console.log(`[BaseRepository.create] INSERT SUCCESS for table ${this.tableName}:`, JSON.stringify(result, null, 2));
     return convertKeysFromDb(result) as T;
   }
 
