@@ -13,6 +13,88 @@ export class OrderController extends CrudController<IOrder> {
     super(orderService);
   }
 
+  async list(req: AuthReq, res: any) {
+    const {
+      search,
+      status,
+      paymentStatus,
+      dateFrom,
+      dateTo,
+      sortBy = 'newest',
+      page = '1',
+      limit = '50',
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(200, Math.max(1, parseInt(limit as string, 10) || 50));
+    const offset = (pageNum - 1) * limitNum;
+
+    const filter: Record<string, any> = {};
+
+    if (search && typeof search === 'string') {
+      const term = search.trim().toLowerCase();
+      filter.$or = [
+        { id: { $ilike: `%${term}%` } },
+        { orderNumber: { $ilike: `%${term}%` } },
+        { 'shippingAddress.fullName': { $ilike: `%${term}%` } },
+        { 'shippingAddress.phone': { $ilike: `%${term}%` } },
+        { 'shippingAddress.email': { $ilike: `%${term}%` } },
+      ];
+    }
+
+    if (status && typeof status === 'string') {
+      filter.status = status.toUpperCase();
+    }
+
+    if (paymentStatus && typeof paymentStatus === 'string') {
+      filter['payment.status'] = paymentStatus.toUpperCase();
+    }
+
+    if (dateFrom || dateTo) {
+      filter.createdAt = {};
+      if (dateFrom && typeof dateFrom === 'string') {
+        filter.createdAt.$gte = new Date(dateFrom);
+      }
+      if (dateTo && typeof dateTo === 'string') {
+        const toDate = new Date(dateTo);
+        toDate.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = toDate;
+      }
+    }
+
+    let orderBy: string | undefined;
+    let orderDir: 'asc' | 'desc' = 'desc';
+
+    if (sortBy === 'oldest') {
+      orderBy = 'createdAt';
+      orderDir = 'asc';
+    } else if (sortBy === 'total') {
+      orderBy = 'pricing.total';
+      orderDir = 'desc';
+    } else {
+      orderBy = 'createdAt';
+      orderDir = 'desc';
+    }
+
+    const [items, total] = await Promise.all([
+      orderService.find(filter, { limit: limitNum, offset, orderBy, orderDir }),
+      orderService.count(filter),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / limitNum));
+
+    return res.status(200).json({
+      success: true,
+      data: items,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages,
+      },
+    });
+  }
+
   async create(req: AuthReq, res: any) {
     const userId = req.user?.userId;
     if (!userId) throw new AppError('Unauthorized', 401);
