@@ -26,7 +26,7 @@ app.use(helmet());
 const allowedOrigins = process.env.CLIENT_URL!.split(',');
 
 app.use(cors({
-  origin: true,
+  origin: allowedOrigins,
   credentials: true,
 }));
 
