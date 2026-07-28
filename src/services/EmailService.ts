@@ -112,7 +112,7 @@ export const emailService = {
             <p>This code will expire in 10 minutes.</p>
             <p>If you didn't request this, please ignore this email.</p>
             <hr style="margin: 20px 0; border: none; border-top: 1px solid #e2e8f0;">
-            <p style="font-size: 12px; color: #64748b;">Sham Presto - Your trusted shopping companion</p>
+            <p style="font-size: 12px; color: #64748b;">Sham Square - Your trusted shopping companion</p>
           </div>
         </body>
       </html>

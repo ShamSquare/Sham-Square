@@ -41,8 +41,7 @@ export class CartController extends CrudController<ICart> {
       await orderItemRepository.create({
         orderId: createdOrder.id,
         productId: it.productId,
-        variantId: it.variantId,
-        sku: it.variantId?.toString() || '',
+        sku: '',
         productName: it.productName,
         variantName: it.variantName,
         thumbnail: it.thumbnail,

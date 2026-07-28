@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { webAuthService } from '../services/WebAuthService';
 import { otpService } from '../services/OtpService';
 import { emailService } from '../services/EmailService';
-import jwtUtil from '../utils/jwt.util';
+import jwtUtil, { blacklistToken } from '../utils/jwt.util';
 import { hashPassword, verifyPassword } from '../utils/password.util';
 import { AppError } from '../utils/app-error.util';
 import { BaseController } from './BaseController';
@@ -271,7 +271,7 @@ export class WebAuthController extends BaseController {
       phone: user.phone,
       role: user.role,
       roleType: user.roleType,
-      departmentId: user.departmentId,
+      categoryType: user.categoryType,
       status: user.status,
       emailVerified: user.emailVerified,
       phoneVerified: user.phoneVerified,
@@ -297,7 +297,7 @@ const userResponse = {
       phone: user.phone,
       role: user.role,
       roleType: user.roleType,
-      departmentId: user.departmentId,
+      categoryType: user.categoryType,
       status: user.status,
       emailVerified: user.emailVerified,
       phoneVerified: user.phoneVerified,
@@ -309,7 +309,18 @@ const userResponse = {
   }
 
   async logout(req: Request, res: Response) {
-    return this.sendSuccess(res, { message: 'Successfully logged out' });
+    const userId = (req as any).user?.userId;
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : null;
+
+    if (token) {
+      blacklistToken(token);
+    }
+
+    return this.sendSuccess(res, {
+      message: 'Successfully logged out',
+      userId: userId,
+    });
   }
 }
 

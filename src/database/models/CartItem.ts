@@ -2,7 +2,6 @@ export interface ICartItem {
   id: string;
   cartId: string;
   productId: string;
-  variantId: string;
   quantity: number;
   unitPrice: number;
   lineTotal: number;

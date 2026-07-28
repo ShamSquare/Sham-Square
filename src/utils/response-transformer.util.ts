@@ -23,7 +23,7 @@ export function snakeCaseToCamelCase<T>(data: T): T {
       let newKey: string;
       
       if (key === 'id') {
-        newKey = '_id';
+        newKey = 'id';
       } else if (key === 'sub_category') {
         newKey = 'sub_category';
       } else {

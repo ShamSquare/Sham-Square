@@ -26,6 +26,9 @@ function convertKeysFromDb(obj: Record<string, any>): Record<string, any> {
 
 export interface OrderWithUser extends IOrder {
   user?: Partial<IUser> | null;
+  items?: any[];
+  productCount?: number;
+  products?: Array<{ productName: string; quantity: number }>;
 }
 
 export class OrderRepository extends BaseRepository<IOrder> {
@@ -40,7 +43,8 @@ export class OrderRepository extends BaseRepository<IOrder> {
       .from('orders')
       .select(`
         *,
-        user:users(*)
+        user:users(*),
+        items:order_items(*)
       `)
       .eq('id', id)
       .maybeSingle();
@@ -52,6 +56,18 @@ export class OrderRepository extends BaseRepository<IOrder> {
     if (result.user) {
       order.user = convertKeysFromDb(result.user) as Partial<IUser>;
     }
+    if (result.items) {
+      order.items = (result.items || []).map((item: any) => convertKeysFromDb(item));
+    }
+    
+    // Add product summary
+    const items = result.items || [];
+    order.productCount = items.length;
+    order.products = items.map((item: any) => ({
+      productName: item.product_name,
+      quantity: item.quantity,
+    }));
+    
     return order;
   }
 
@@ -64,7 +80,8 @@ export class OrderRepository extends BaseRepository<IOrder> {
       .from('orders')
       .select(`
         *,
-        user:users(*)
+        user:users(*),
+        items:order_items(*)
       `);
 
     if (filter) {
@@ -108,6 +125,18 @@ export class OrderRepository extends BaseRepository<IOrder> {
       if (r.user) {
         order.user = convertKeysFromDb(r.user) as Partial<IUser>;
       }
+      if (r.items) {
+        order.items = (r.items || []).map((item: any) => convertKeysFromDb(item));
+      }
+      
+      // Add product summary
+      const items = r.items || [];
+      order.productCount = items.length;
+      order.products = items.map((item: any) => ({
+        productName: item.product_name,
+        quantity: item.quantity,
+      }));
+      
       return order;
     });
   }

@@ -7,6 +7,33 @@ import jwt from 'jsonwebtoken';
 import jwtConfig, { ITokenPayload } from '../config/jwt.config';
 import logger from './logger.util';
 import { AppError } from './app-error.util';
+const tokenBlacklist = new Set<string>();
+
+export function blacklistToken(token: string): void {
+  tokenBlacklist.add(token);
+}
+
+export function isTokenBlacklisted(token: string): boolean {
+  return tokenBlacklist.has(token);
+}
+
+export function clearBlacklist(): void {
+  tokenBlacklist.clear();
+}
+
+export function blacklistTokenByUserId(userId: string): void {
+  for (const token of tokenBlacklist) {
+    try {
+      const decoded = jwt.decode(token) as any;
+      if (decoded?.userId === userId) {
+        tokenBlacklist.add(token);
+      }
+    } catch {
+      continue;
+    }
+  }
+}
+
 /**
  * Generate access token
  */

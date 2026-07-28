@@ -1,24 +1,20 @@
 import { CrudController } from './CrudController';
-import { webAuthService } from '../services/WebAuthService';
-import { departmentService } from '../services/DepartmentService';
-import type { IWebUser } from '../database/models/WebUser';
+import { webAuthService } from '../services';
+import type { IWebUser } from '../database/models';
 import { AppError } from '../utils/app-error.util';
 import { hashPassword } from '../utils/password.util';
 import { isValidUUID } from '../utils/uuid.util';
-import type { Request, Response } from 'express';
 
-export class DepartmentAdminController extends CrudController<IWebUser> {
+export class CategoryAdminController extends CrudController<IWebUser> {
   constructor() {
     super(webAuthService);
   }
 
-  async list(req: Request, res: Response) {
+  async list(req: any, res: any) {
     const { search, page = 1, limit = 10 } = req.query;
-
-    const filters: any = { role_type: 'department', is_deleted: false };
-
+    const filters: Record<string, any> = { role_type: 'category', is_deleted: false };
     if (search) {
-      const s = (search as string).toLowerCase();
+      const s = search.toLowerCase();
       filters.$or = [
         { first_name: { $ilike: `%${s}%` } },
         { last_name: { $ilike: `%${s}%` } },
@@ -26,16 +22,13 @@ export class DepartmentAdminController extends CrudController<IWebUser> {
         { phone: { $ilike: `%${s}%` } },
       ];
     }
-
     const items = await this.service.find(filters, {
       limit: Number(limit),
       offset: (Number(page) - 1) * Number(limit),
       orderBy: 'created_at',
       orderDir: 'desc',
     });
-
     const total = await this.service.count(filters);
-
     return this.sendSuccess(res, {
       data: items,
       pagination: {
@@ -47,8 +40,8 @@ export class DepartmentAdminController extends CrudController<IWebUser> {
     });
   }
 
-  async create(req: Request, res: Response) {
-    const { firstName, lastName, email, phone, password, departmentId, role, status, avatar } = req.body;
+  async create(req: any, res: any) {
+    const { firstName, lastName, email, phone, password, categoryType, role, status, avatar } = req.body;
 
     if (!firstName || !firstName.trim()) {
       throw new AppError('First name is required', 400, 'VALIDATION_ERROR');
@@ -62,8 +55,8 @@ export class DepartmentAdminController extends CrudController<IWebUser> {
     if (!password || password.length < 8) {
       throw new AppError('Password must be at least 8 characters', 400, 'VALIDATION_ERROR');
     }
-    if (!departmentId) {
-      throw new AppError('Department is required', 400, 'VALIDATION_ERROR');
+    if (!categoryType) {
+      throw new AppError('Category is required', 400, 'VALIDATION_ERROR');
     }
 
     const existingEmail = await webAuthService.findOne({ email, isDeleted: false });
@@ -72,7 +65,6 @@ export class DepartmentAdminController extends CrudController<IWebUser> {
     }
 
     const passwordHash = hashPassword(password);
-
     const userData: Partial<IWebUser> = {
       email: email.trim(),
       passwordHash,
@@ -80,33 +72,29 @@ export class DepartmentAdminController extends CrudController<IWebUser> {
       lastName: (lastName || '').trim(),
       phone: phone.trim(),
       avatar: avatar || null,
-      role: role || 'DEPARTMENT_ADMIN',
-      roleType: 'department',
-      departmentId: departmentId,
+      role: role || 'CATEGORY_ADMIN',
+      roleType: 'category',
+      categoryType: categoryType,
       status: status || 'ACTIVE',
       emailVerified: false,
       phoneVerified: false,
     };
 
     const user = await webAuthService.create(userData);
-
     return this.sendCreated(res, user);
   }
 
-  async update(req: Request, res: Response) {
+  async update(req: any, res: any) {
     if (!isValidUUID(req.params.id)) {
-      return this.sendError(res, 'Invalid department admin ID', 400);
+      return this.sendError(res, 'Invalid category admin ID', 400);
     }
-
-    const { firstName, lastName, email, phone, password, departmentId, role, status, avatar } = req.body;
-
-    const updateData: Partial<IWebUser> = {};
-
+    const { firstName, lastName, email, phone, password, categoryType, role, status, avatar } = req.body;
+    const updateData: Record<string, any> = {};
     if (firstName !== undefined) updateData.firstName = firstName.trim();
     if (lastName !== undefined) updateData.lastName = lastName.trim();
     if (email !== undefined) updateData.email = email.trim();
     if (phone !== undefined) updateData.phone = phone.trim();
-    if (departmentId !== undefined) updateData.departmentId = departmentId;
+    if (categoryType !== undefined) updateData.categoryType = categoryType;
     if (role !== undefined) updateData.role = role;
     if (status !== undefined) updateData.status = status;
     if (avatar !== undefined) updateData.avatar = avatar;
@@ -116,47 +104,40 @@ export class DepartmentAdminController extends CrudController<IWebUser> {
       }
       updateData.passwordHash = hashPassword(password);
     }
-
     const updated = await this.service.updateById(req.params.id, updateData);
     if (!updated) {
-      return this.sendError(res, 'Department admin not found', 404);
+      return this.sendError(res, 'Category admin not found', 404);
     }
-
     return this.sendSuccess(res, updated);
   }
 
-  async remove(req: Request, res: Response) {
+  async remove(req: any, res: any) {
     if (!isValidUUID(req.params.id)) {
-      return this.sendError(res, 'Invalid department admin ID', 400);
+      return this.sendError(res, 'Invalid category admin ID', 400);
     }
-
     const item = await this.service.getById(req.params.id);
     if (!item) {
-      return this.sendError(res, 'Department admin not found', 404);
+      return this.sendError(res, 'Category admin not found', 404);
     }
-
     await this.service.deleteById(req.params.id);
     return this.sendNoContent(res);
   }
 
-  async toggleStatus(req: Request, res: Response) {
+  async toggleStatus(req: any, res: any) {
     if (!isValidUUID(req.params.id)) {
-      return this.sendError(res, 'Invalid department admin ID', 400);
+      return this.sendError(res, 'Invalid category admin ID', 400);
     }
-
     const user = await this.service.getById(req.params.id);
     if (!user) {
-      return this.sendError(res, 'Department admin not found', 404);
+      return this.sendError(res, 'Category admin not found', 404);
     }
-
     const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const updated = await this.service.updateById(req.params.id, { status: newStatus });
     if (!updated) {
       return this.sendError(res, 'Failed to update status', 500);
     }
-
     return this.sendSuccess(res, updated);
   }
 }
 
-export const departmentAdminController = new DepartmentAdminController();
+export const categoryAdminController = new CategoryAdminController();

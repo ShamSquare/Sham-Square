@@ -3,6 +3,8 @@
  * Represents the website users (separate from mobile users for authentication independence)
  */
 
+import { CategoryType } from '../enums';
+
 export interface IWebUser {
    id: string;
    email: string;
@@ -13,7 +15,7 @@ export interface IWebUser {
    phone?: string | null;
    role: string;
    roleType: string;
-   departmentId?: string | null;
+   categoryType?: CategoryType | null;
    status: string;
    emailVerified: boolean;
    phoneVerified: boolean;

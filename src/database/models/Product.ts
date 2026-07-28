@@ -1,4 +1,4 @@
-import { ProductStatus, Category } from '../enums/index';
+import { ProductStatus, CategoryType, Category } from '../enums/index';
 
 export interface IProductRatingAggregate {
   average: number;
@@ -14,7 +14,7 @@ export interface IProductRatingAggregate {
 
 export interface IProduct {
   id: string;
-  category: Category;
+  category: CategoryType;
   subCategory: string;
   vendorId?: string | null;
   name: string;

@@ -187,6 +187,14 @@ export enum TrackingEventSource {
   CUSTOMER = 'CUSTOMER',
 }
 
+export enum CategoryType {
+  ANIME = 'anime',
+  CROCHET = 'crochet',
+  HANDMADE = 'handmade',
+  LIBRARY_AL_DOHA = 'library_al_doha',
+}
+
+// Keep Category enum for backward compatibility during migration
 export enum Category {
   AL_DUHA_LIBRARY = 'AL_DUHA_LIBRARY',
   CROCHET = 'CROCHET',
@@ -226,3 +234,4 @@ export const SETTING_GROUP_VALUES = Object.values(SettingGroup);
 export const TRACKING_EVENT_SOURCE_VALUES = Object.values(TrackingEventSource);
 export const CATEGORY_VALUES = Object.values(Category);
 export const SUB_CATEGORY_VALUES = Object.values(SubCategory);
+export const CATEGORY_TYPE_VALUES = Object.values(CategoryType);

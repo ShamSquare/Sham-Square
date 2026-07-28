@@ -1,7 +1,7 @@
 import { CrudController } from './CrudController';
 import { cartItemService, cartService, productService } from '../services/index';
 import type { ICartItem, ICart } from '../database/models/index';
-import { cartRepository, cartItemRepository } from '../database/repositories/index';
+import { cartRepository, cartItemRepository, productVariantRepository } from '../database/repositories/index';
 import { realtimeService } from '../services/RealtimeService';
 import { CartStatus } from '../database/enums/index';
 import { AppError } from '../utils/app-error.util';
@@ -77,7 +77,7 @@ export class CartItemController extends CrudController<ICartItem> {
       const thumbnail = product.thumbnail || (product.images?.[0]) || product.image || '';
 
       // Get the default variant for this product
-      const variants = await productService.find({ productId: product.id } as any);
+      const variants = await productVariantRepository.find({ productId: product.id } as any);
       const defaultVariant = variants?.[0];
 
       // 3. Check if product already exists in this cart

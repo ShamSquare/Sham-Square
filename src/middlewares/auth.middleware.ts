@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwtUtil from '../utils/jwt.util';
+import jwtUtil, { isTokenBlacklisted } from '../utils/jwt.util';
 import { AppError } from '../utils/app-error.util';
 
 export interface AuthRequest extends Request {
@@ -21,6 +21,10 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
     }
 
     const token = authHeader.split(' ')[1];
+
+    if (isTokenBlacklisted(token)) {
+      throw new AppError('Token has been invalidated. Please log in again.', 401, 'TOKEN_BLACKLISTED');
+    }
 
     const decoded = jwtUtil.verifyAccessToken(token);
 

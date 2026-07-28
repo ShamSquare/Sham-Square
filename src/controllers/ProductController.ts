@@ -3,7 +3,7 @@ import { productService } from '../services/index';
 import type { IProduct } from '../database/models/index';
 import { realtimeService } from '../services/RealtimeService';
 import { sanitizeUUIDFields, isValidUUID } from '../utils/uuid.util';
-import { Category, SubCategory } from '../database/enums/index';
+import { CategoryType, SubCategory } from '../database/enums/index';
 
 const UUID_FIELDS = ['vendorId', 'brandId', 'createdBy', 'updatedBy'];
 
@@ -78,12 +78,20 @@ function transformProductPayload(data: Record<string, any>): Record<string, any>
     transformed.isFeatured = Boolean(data.isFeatured);
   }
 
-  // Category (text column in DB - category enum value)
+  // total_sold (integer column in DB - managed by OrderService, pass through if provided)
+  if (data.total_sold !== undefined && data.total_sold !== null && data.total_sold !== '') {
+    const totalSold = Number(data.total_sold);
+    if (!isNaN(totalSold) && totalSold >= 0) {
+      transformed.total_sold = totalSold;
+    }
+  }
+
+  // Category (text column in DB - category_type enum value)
   // Accept both "Category" (PascalCase from frontend) and "category" (camelCase)
   const categoryField = data.Category !== undefined ? data.Category : data.category;
   if (categoryField !== undefined) {
-    const categoryValue = String(categoryField).trim().toUpperCase();
-    if (Object.values(Category).includes(categoryValue as Category)) {
+    const categoryValue = String(categoryField).trim().toLowerCase();
+    if (Object.values(CategoryType).includes(categoryValue as CategoryType)) {
       transformed.category = categoryValue;
     }
   }
@@ -97,9 +105,6 @@ function transformProductPayload(data: Record<string, any>): Record<string, any>
       transformed.subCategory = subCategoryValue;
     }
   }
-
-  // departmentId -> department_id (uuid column in DB)
-  if (data.departmentId !== undefined) transformed.departmentId = data.departmentId;
 
   return transformed;
 }
@@ -122,16 +127,16 @@ function validateProductData(data: Record<string, any>, isUpdate = false): strin
     }
 
     // Validate category is provided and is a valid enum value
-    if (!categoryField || !Object.values(Category).includes(String(categoryField).trim().toUpperCase() as Category)) {
+    if (!categoryField || !Object.values(CategoryType).includes(String(categoryField).trim().toLowerCase() as CategoryType)) {
       errors.push('الفئة (Category) مطلوبة ويجب أن تكون قيمة صالحة');
     }
 
     // Validate subCategory business rules
     if (subCategoryField !== undefined && subCategoryField !== null && subCategoryField !== '') {
-      const catValue = categoryField ? String(categoryField).trim().toUpperCase() : null;
+      const catValue = categoryField ? String(categoryField).trim().toLowerCase() : null;
       const subValue = String(subCategoryField).trim().toUpperCase();
-      if (catValue !== Category.AL_DUHA_LIBRARY && subValue !== SubCategory.NO_SUB) {
-        errors.push('التصنيف الفرعي (SubCategory) مسموح به فقط لفئة "Al-Duha Library"');
+      if (catValue !== CategoryType.LIBRARY_AL_DOHA && subValue !== SubCategory.NO_SUB) {
+        errors.push('التصنيف الفرعي (SubCategory) مسموح به فقط لفئة "Library Al Doha"');
       } else if (!Object.values(SubCategory).includes(subValue as SubCategory)) {
         errors.push('قيمة التصنيف الفرعي (SubCategory) غير صالحة');
       }
@@ -148,17 +153,17 @@ function validateProductData(data: Record<string, any>, isUpdate = false): strin
 
     // Validate category if provided
     if (categoryField !== undefined && categoryField !== null && categoryField !== '') {
-      if (!Object.values(Category).includes(String(categoryField).trim().toUpperCase() as Category)) {
+      if (!Object.values(CategoryType).includes(String(categoryField).trim().toLowerCase() as CategoryType)) {
         errors.push('قيمة الفئة (Category) غير صالحة');
       }
     }
 
     // Validate subCategory if provided
     if (subCategoryField !== undefined && subCategoryField !== null && subCategoryField !== '') {
-      const catValue = categoryField ? String(categoryField).trim().toUpperCase() : null;
+      const catValue = categoryField ? String(categoryField).trim().toLowerCase() : null;
       const subValue = String(subCategoryField).trim().toUpperCase();
-      if (catValue !== Category.AL_DUHA_LIBRARY && subValue !== SubCategory.NO_SUB) {
-        errors.push('التصنيف الفرعي (SubCategory) مسموح به فقط لفئة "Al-Duha Library"');
+      if (catValue !== CategoryType.LIBRARY_AL_DOHA && subValue !== SubCategory.NO_SUB) {
+        errors.push('التصنيف الفرعي (SubCategory) مسموح به فقط لفئة "Library Al Doha"');
       } else if (!Object.values(SubCategory).includes(subValue as SubCategory)) {
         errors.push('قيمة التصنيف الفرعي (SubCategory) غير صالحة');
       }

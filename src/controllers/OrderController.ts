@@ -5,6 +5,7 @@ import { OrderStatus } from '../database/enums/index';
 import { AppError } from '../utils/app-error.util';
 import { realtimeService } from '../services/RealtimeService';
 import { isValidUUID } from '../utils/uuid.util';
+import { orderItemRepository } from '../database/repositories/index';
 
 type AuthReq = import('../middlewares/auth.middleware').AuthRequest;
 
@@ -104,8 +105,48 @@ export class OrderController extends CrudController<IOrder> {
       userId,
       orderNumber: req.body.orderNumber || `ORD-${Date.now()}`,
     };
-
+    
+    console.log("ORDER REQUEST BODY:", JSON.stringify(req.body, null, 2));
+    console.log("ORDER PAYLOAD:", JSON.stringify(payload, null, 2));
+    
+    // Create the order first
     const created = await orderService.create(payload as any);
+    
+    // If items are provided in the request, create order items
+    const items = req.body.items;
+    console.log(`[ORDER CREATE] Received ${items?.length || 0} items in request for order ${created.id}`);
+    console.log(`[ORDER CREATE] Items data:`, JSON.stringify(items, null, 2));
+    
+    if (items && Array.isArray(items) && items.length > 0) {
+      console.log(`[ORDER CREATE] Creating ${items.length} order items for order ${created.id}`);
+      
+      for (const item of items) {
+        try {
+          const orderItem = {
+            orderId: created.id,
+            productId: item.productId || item.product_id || '',
+            sku: item.sku || '',
+            productName: item.productName || item.product_name || 'Unknown Product',
+            variantName: item.variantName || item.variant_name || '',
+            thumbnail: item.thumbnail || item.productImage || '',
+            quantity: item.quantity || 1,
+            unitPrice: item.unitPrice || item.price || 0,
+            lineTotal: item.lineTotal || (item.unitPrice || item.price || 0) * (item.quantity || 1),
+            currency: item.currency || 'USD',
+            status: 'PENDING' as any,
+          };
+          console.log(`[ORDER CREATE] Creating order item:`, JSON.stringify(orderItem, null, 2));
+          await orderItemRepository.create(orderItem);
+        } catch (itemError) {
+          console.error(`[ORDER CREATE] Failed to create order item for product ${item.productId}:`, itemError);
+        }
+      }
+      
+      console.log(`[ORDER CREATE] Successfully created order items for order ${created.id}`);
+    } else {
+      console.log(`[ORDER CREATE] No items provided in request for order ${created.id}`);
+    }
+    
     realtimeService.emitToUser(String(userId), 'order:created', created);
     realtimeService.emitToAdmins('order:created', created);
 
