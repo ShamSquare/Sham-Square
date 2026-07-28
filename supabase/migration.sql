@@ -1790,3 +1790,17 @@ create trigger set_updated_at before update on settings
 
 create trigger set_updated_at before update on user_devices
   for each row execute function trigger_set_updated_at();
+
+create or replace function public.adjust_stock(
+  p_product_id uuid,
+  p_quantity integer
+) returns void
+language sql
+security definer
+as $$
+  update products
+  set stock = greatest(0, stock - p_quantity),
+      total_sold = total_sold + p_quantity,
+      updated_at = now()
+  where id = p_product_id;
+$$;

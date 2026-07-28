@@ -125,6 +125,7 @@ export class OrderController extends CrudController<IOrder> {
           const orderItem = {
             orderId: created.id,
             productId: item.productId || item.product_id || '',
+            variantId: item.variantId || item.variant_id || item.productId || item.product_id || '',
             sku: item.sku || '',
             productName: item.productName || item.product_name || 'Unknown Product',
             variantName: item.variantName || item.variant_name || '',
