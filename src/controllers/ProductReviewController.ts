@@ -71,7 +71,7 @@ export class ProductReviewController extends CrudController<IProductReview> {
           .from('products')
           .select('id')
           .eq('category', managedCategory)
-          .eq('is_deleted', false);
+          .eq('is_deleted', false as any);
 
         if (productsError) {
           throw new AppError('Failed to fetch category products', 500, 'PRODUCTS_ERROR');
@@ -126,11 +126,11 @@ export class ProductReviewController extends CrudController<IProductReview> {
       }
 
       if (status === 'approved') {
-        query = query.eq('is_approved', true).eq('is_hidden', false);
+        query = query.eq('is_approved', true as any).eq('is_hidden', false as any);
       } else if (status === 'pending') {
-        query = query.eq('is_approved', false).eq('is_hidden', false);
+        query = query.eq('is_approved', false as any).eq('is_hidden', false as any);
       } else if (status === 'rejected') {
-        query = query.eq('is_hidden', true);
+        query = query.eq('is_hidden', true as any);
       }
 
       if (productId) {
@@ -149,7 +149,7 @@ export class ProductReviewController extends CrudController<IProductReview> {
             .from('products')
             .select('id')
             .eq('category', managedCategory)
-            .eq('is_deleted', false);
+            .eq('is_deleted', false as any);
 
           const categoryProductIds = categoryProducts?.map((p: any) => p.id) || [];
           if (categoryProductIds.length > 0) {
@@ -250,7 +250,7 @@ export class ProductReviewController extends CrudController<IProductReview> {
         return this.sendError(res, 'Not found', 404);
       }
       
-      // Update product rating after review is updated
+      // Update
       if (updated && updated.productId) {
         await productService.updateProductRating(updated.productId);
       }

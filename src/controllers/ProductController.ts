@@ -222,6 +222,77 @@ export class ProductController extends CrudController<IProduct> {
     super(productService);
   }
 
+  /**
+   * Override list to enforce DEPARTMENT_ADMIN category filtering on the backend.
+   * SUPER_ADMIN and ADMIN see all products.
+   * DEPARTMENT_ADMIN sees only products in their managed category.
+   */
+  async list(req: AuthRequest, res: any) {
+    try {
+      const userRole = req.user?.role;
+
+      // Department Admin: filter by managed category
+      if (userRole === 'departmentadmin') {
+        const managedCategory = req.user?.managedCategory;
+        if (!managedCategory) {
+          return res.status(403).json({
+            success: false,
+            message: 'Department Admin must have a managed category assigned',
+            code: 'NO_MANAGED_CATEGORY',
+          });
+        }
+
+        const items = await productService.find({ category: managedCategory } as any);
+        return this.sendSuccess(res, items);
+      }
+
+      // SUPER_ADMIN and ADMIN: return all products
+      const items = await productService.find({});
+      return this.sendSuccess(res, items);
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error?.message || 'Failed to fetch products',
+      });
+    }
+  }
+
+  /**
+   * Override getById to enforce DEPARTMENT_ADMIN category restriction.
+   * Department Admin can only view products in their managed category.
+   */
+  async getById(req: AuthRequest, res: any) {
+    try {
+      if (!isValidUUID(req.params.id)) {
+        return this.sendError(res, 'Invalid product ID', 400);
+      }
+
+      const item = await productService.getById(req.params.id);
+      if (!item) {
+        return this.sendError(res, 'Not found', 404);
+      }
+
+      // Enforce DEPARTMENT_ADMIN category restriction
+      const userRole = req.user?.role;
+      if (userRole === 'departmentadmin') {
+        const managedCategory = req.user?.managedCategory;
+        if (!managedCategory) {
+          return this.sendError(res, 'Department Admin must have a managed category assigned', 403);
+        }
+        if ((item as any).category !== managedCategory) {
+          return this.sendError(res, 'Access denied. You can only view products in your category.', 403);
+        }
+      }
+
+      return this.sendSuccess(res, item);
+    } catch (error: any) {
+      return res.status(500).json({
+        success: false,
+        message: error?.message || 'Failed to fetch product',
+      });
+    }
+  }
+
   async create(req: AuthRequest, res: any) {
     try {
       const data = req.body || {};

@@ -41,40 +41,51 @@ export class OrderController extends CrudController<IOrder> {
         throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
       }
 
-      // For department admin, we need to filter orders that contain products from their category
+      // Optimized: fetch only product IDs in the managed category, then order_items for those products
       const client = getAdminClient();
-      
-      // Get order IDs that contain products from the department admin's category using a join
-      const { data: orderItems, error: orderItemsError } = await client
-        .from('order_items')
-        .select('order_id, product_id')
-        .eq('is_deleted', false);
 
-      if (orderItemsError) {
-        throw new AppError('Failed to filter orders by category', 500, 'FILTER_ERROR');
-      }
-
-      // Get product IDs in the managed category
+      // Step 1: Get product IDs in the managed category (single query)
       const { data: categoryProducts, error: productsError } = await client
         .from('products')
         .select('id')
         .eq('category', managedCategory)
-        .eq('is_deleted', false);
+        .eq('is_deleted', false as any);
 
       if (productsError) {
         throw new AppError('Failed to fetch category products', 500, 'PRODUCTS_ERROR');
       }
 
-      const categoryProductIds = new Set(categoryProducts?.map((p: any) => p.id) || []);
-      
-      // Filter order items to only those with products in the managed category
-      const orderIds = new Set(
-        orderItems
-          ?.filter((oi: any) => categoryProductIds.has(oi.product_id))
-          .map((oi: any) => oi.order_id) || []
+      const categoryProductIds = (categoryProducts || []).map((p: any) => p.id);
+
+      if (categoryProductIds.length === 0) {
+        // No products in this category yet
+        return res.status(200).json({
+          success: true,
+          data: [],
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: 0,
+            totalPages: 1,
+          },
+        });
+      }
+
+      // Step 2: Get order IDs that contain those products (filtered at DB level using .in())
+      const { data: orderItems, error: orderItemsError } = await client
+        .from('order_items')
+        .select('order_id')
+        .in('product_id', categoryProductIds);
+
+      if (orderItemsError) {
+        throw new AppError('Failed to filter orders by category', 500, 'FILTER_ERROR');
+      }
+
+      const orderIds = Array.from(
+        new Set((orderItems || []).map((oi: any) => oi.order_id))
       );
 
-      if (orderIds.size === 0) {
+      if (orderIds.length === 0) {
         // No orders found for this category
         return res.status(200).json({
           success: true,
@@ -88,7 +99,7 @@ export class OrderController extends CrudController<IOrder> {
         });
       }
 
-      filter.id = { $in: Array.from(orderIds) };
+      filter.id = { $in: orderIds };
     }
 
     if (search && typeof search === 'string') {
@@ -239,7 +250,7 @@ export class OrderController extends CrudController<IOrder> {
         .from('order_items')
         .select('product_id')
         .eq('order_id', req.params.id)
-        .eq('is_deleted', false);
+        .eq('is_deleted', false as any);
 
       if (orderItemsError || !orderItems || orderItems.length === 0) {
         throw new AppError('Access denied. Order does not contain products from your category.', 403, 'CATEGORY_MISMATCH');
@@ -251,7 +262,7 @@ export class OrderController extends CrudController<IOrder> {
         .from('products')
         .select('id')
         .eq('category', managedCategory)
-        .eq('is_deleted', false)
+        .eq('is_deleted', false as any)
         .in('id', productIds);
 
       if (productsError || !categoryProducts || categoryProducts.length === 0) {
