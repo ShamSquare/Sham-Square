@@ -4,6 +4,8 @@ import type { IProduct } from '../database/models/index';
 import { realtimeService } from '../services/RealtimeService';
 import { sanitizeUUIDFields, isValidUUID } from '../utils/uuid.util';
 import { CategoryType, SubCategory } from '../database/enums/index';
+import { AppError } from '../utils/app-error.util';
+import { AuthRequest } from '../middlewares/auth.middleware';
 
 const UUID_FIELDS = ['vendorId', 'brandId', 'createdBy', 'updatedBy'];
 
@@ -23,7 +25,7 @@ function transformProductPayload(data: Record<string, any>): Record<string, any>
   if (data.tags) {
     transformed.tags = Array.isArray(data.tags) ? data.tags : String(data.tags).split(',').map((t: string) => t.trim()).filter(Boolean);
   }
-
+console.log("TRANSFORMED:", transformed);
   // Generate slug from name if not provided
   if (!transformed.slug && data.name) {
     transformed.slug = String(data.name)
@@ -83,6 +85,44 @@ function transformProductPayload(data: Record<string, any>): Record<string, any>
     const totalSold = Number(data.total_sold);
     if (!isNaN(totalSold) && totalSold >= 0) {
       transformed.total_sold = totalSold;
+    }
+  }
+
+  // has_sizes -> has_sizes (boolean column in DB)
+  if (data.hasSizes !== undefined) {
+    transformed.has_sizes = Boolean(data.hasSizes);
+  }
+  if (data.has_sizes !== undefined) {
+    transformed.has_sizes = Boolean(data.has_sizes);
+  }
+
+  // sizes (text array column in DB)
+  if (data.sizes !== undefined) {
+    if (Array.isArray(data.sizes)) {
+      transformed.sizes = data.sizes.map((s: string) => String(s).trim()).filter(Boolean);
+    } else if (typeof data.sizes === 'string' && data.sizes.trim()) {
+      transformed.sizes = [String(data.sizes).trim()];
+    } else {
+      transformed.sizes = [];
+    }
+  }
+
+  // has_colors -> has_colors (boolean column in DB)
+  if (data.hasColors !== undefined) {
+    transformed.has_colors = Boolean(data.hasColors);
+  }
+  if (data.has_colors !== undefined) {
+    transformed.has_colors = Boolean(data.has_colors);
+  }
+
+  // colors (text array column in DB)
+  if (data.colors !== undefined) {
+    if (Array.isArray(data.colors)) {
+      transformed.colors = data.colors.map((c: string) => String(c).trim()).filter(Boolean);
+    } else if (typeof data.colors === 'string' && data.colors.trim()) {
+      transformed.colors = [String(data.colors).trim()];
+    } else {
+      transformed.colors = [];
     }
   }
 
@@ -182,12 +222,9 @@ export class ProductController extends CrudController<IProduct> {
     super(productService);
   }
 
-  async create(req: any, res: any) {
+  async create(req: AuthRequest, res: any) {
     try {
       const data = req.body || {};
-      console.log('Incoming Product Create', data);
-
-      // Step 1: Validate raw input first (before transformation)
       const rawErrors = validateProductData(data, false);
       if (rawErrors.length > 0) {
         return res.status(400).json({
@@ -198,16 +235,26 @@ export class ProductController extends CrudController<IProduct> {
       }
 
       // Step 2: Transform frontend payload to DB schema
-      const transformed = transformProductPayload(data);
-      console.log('Transformed Product Payload', transformed);
+      let transformed = transformProductPayload(data);
+
+      // Step 2.5: Enforce Department Admin category restriction
+      const userRole = req.user?.role;
+      if (userRole === 'departmentadmin') {
+        // Department Admin must have a managed category
+        const managedCategory = (req as any).user?.managedCategory;
+        if (!managedCategory) {
+          throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
+        }
+
+        // Force the category to be the managed category
+        transformed.category = managedCategory;
+      }
 
       // Step 3: Sanitize UUID fields (convert empty strings to null)
       const sanitized = sanitizeUUIDFields(transformed, UUID_FIELDS);
-      console.log('Sanitized Product Payload', sanitized);
 
       // Step 4: Create the product
       const created = await productService.create(sanitized);
-      console.log('Inserted Product', created);
       realtimeService.emitPublic('inventory:updated', { action: 'created', product: created });
       return this.sendCreated(res, created);
     } catch (error: any) {
@@ -219,7 +266,7 @@ export class ProductController extends CrudController<IProduct> {
     }
   }
 
-  async update(req: any, res: any) {
+  async update(req: AuthRequest, res: any) {
     try {
       // Validate UUID format
       if (!isValidUUID(req.params.id)) {
@@ -230,9 +277,6 @@ export class ProductController extends CrudController<IProduct> {
       }
 
       const data = req.body || {};
-      console.log('Incoming Product Update', { id: req.params.id, data });
-
-      // Step 1: Validate raw input first (before transformation)
       const rawErrors = validateProductData(data, true);
       if (rawErrors.length > 0) {
         return res.status(400).json({
@@ -243,17 +287,30 @@ export class ProductController extends CrudController<IProduct> {
       }
 
       // Step 2: Transform frontend payload to DB schema
-      const transformed = transformProductPayload(data);
-      console.log('Transformed Product Update Payload', transformed);
+      let transformed = transformProductPayload(data);
+
+      // Step 2.5: Enforce Department Admin category restriction
+      const userRole = req.user?.role;
+      if (userRole === 'departmentadmin') {
+        // Department Admin cannot change the category
+        if (transformed.category) {
+          const managedCategory = (req as any).user?.managedCategory;
+          if (transformed.category !== managedCategory) {
+            throw new AppError(
+              `Access denied. You can only manage products in the ${managedCategory} category.`,
+              403,
+              'CATEGORY_MISMATCH'
+            );
+          }
+        }
+      }
 
       // Step 3: Sanitize UUID fields
       const sanitized = sanitizeUUIDFields(transformed, UUID_FIELDS);
-      console.log('Sanitized Product Update Payload', sanitized);
 
       // Step 4: Update the product
       const updated = await productService.updateById(req.params.id, sanitized);
       if (!updated) return this.sendError(res, 'Not found', 404);
-      console.log('Updated Product', updated);
 
       realtimeService.emitPublic('inventory:updated', { action: 'updated', product: updated });
       return this.sendSuccess(res, updated);

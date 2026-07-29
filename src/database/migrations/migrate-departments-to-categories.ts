@@ -40,13 +40,10 @@ interface Department {
 }
 
 async function migrateDepartmentsToCategories(): Promise<void> {
-  console.log('🔄 Starting migration: Departments → Categories');
-  
   const client = getAdminClient();
   
   try {
     // Step 1: Fetch all departments to build mapping
-    console.log('📊 Fetching departments...');
     const { data: departments, error: deptError } = await client
       .from('departments')
       .select('id, name, nameAr')
@@ -57,9 +54,6 @@ async function migrateDepartmentsToCategories(): Promise<void> {
       throw deptError;
     }
 
-    console.log(`✅ Found ${departments?.length || 0} departments`);
-
-    // Build department ID to CategoryType mapping
     const deptIdToCategoryMap = new Map<string, CategoryType>();
     
     if (departments) {
@@ -80,7 +74,6 @@ async function migrateDepartmentsToCategories(): Promise<void> {
         
         if (categoryType) {
           deptIdToCategoryMap.set(dept.id, categoryType);
-          console.log(`  ✓ Mapped department "${dept.name}" (${dept.id}) → ${categoryType}`);
         } else {
           console.warn(`  ⚠️  No mapping found for department "${dept.name}" (${dept.id})`);
         }
@@ -88,7 +81,6 @@ async function migrateDepartmentsToCategories(): Promise<void> {
     }
 
     // Step 2: Fetch all products with department_id
-    console.log('\n📦 Fetching products...');
     const { data: products, error: prodError } = await client
       .from('products')
       .select('id, department_id, category, sub_category')
@@ -99,15 +91,11 @@ async function migrateDepartmentsToCategories(): Promise<void> {
       throw prodError;
     }
 
-    console.log(`✅ Found ${products?.length || 0} products`);
-
     if (!products || products.length === 0) {
       console.log('✅ No products to migrate');
       return;
     }
 
-    // Step 3: Update each product
-    console.log('\n🔄 Migrating products...');
     let migrated = 0;
     let skipped = 0;
     let errors = 0;
@@ -116,7 +104,6 @@ async function migrateDepartmentsToCategories(): Promise<void> {
       try {
         // Skip if already has category_type (new format)
         if (product.category && Object.values(CategoryType).includes(product.category as CategoryType)) {
-          console.log(`  ⏭️  Product ${product.id} already has category_type: ${product.category}`);
           skipped++;
           continue;
         }
@@ -163,7 +150,6 @@ async function migrateDepartmentsToCategories(): Promise<void> {
           console.error(`  ❌ Error updating product ${product.id}:`, updateError);
           errors++;
         } else {
-          console.log(`  ✅ Migrated product ${product.id}: ${newCategory}`);
           migrated++;
         }
       } catch (error) {
@@ -171,13 +157,6 @@ async function migrateDepartmentsToCategories(): Promise<void> {
         errors++;
       }
     }
-
-    // Step 4: Summary
-    console.log('\n📊 Migration Summary:');
-    console.log(`  ✅ Migrated: ${migrated}`);
-    console.log(`  ⏭️  Skipped: ${skipped}`);
-    console.log(`  ❌ Errors: ${errors}`);
-    console.log(`  📦 Total: ${products.length}`);
 
     if (errors > 0) {
       console.warn('\n⚠️  Some products had errors. Please review the logs above.');
@@ -195,7 +174,6 @@ async function migrateDepartmentsToCategories(): Promise<void> {
 if (require.main === module) {
   migrateDepartmentsToCategories()
     .then(() => {
-      console.log('\n✅ Migration script completed');
       process.exit(0);
     })
     .catch((error) => {

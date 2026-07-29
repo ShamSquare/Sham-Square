@@ -44,4 +44,8 @@ export interface IProduct {
   updatedBy?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  hasSizes: boolean;
+  sizes: string[];
+  hasColors: boolean;
+  colors: string[];
 }

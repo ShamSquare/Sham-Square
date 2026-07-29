@@ -7,6 +7,7 @@ import { hashPassword, verifyPassword } from '../utils/password.util';
 import { AppError } from '../utils/app-error.util';
 import { BaseController } from './BaseController';
 import { mapRoleToTokenRole } from '../config/jwt.config';
+import { RoleName } from '../database/enums/index';
 
 export class WebAuthController extends BaseController {
   async register(req: Request, res: Response) {
@@ -253,11 +254,18 @@ export class WebAuthController extends BaseController {
 
     await webAuthService.updateLastLogin(user.id);
 
+    // Get managed category for department admins
+    let managedCategory: string | undefined;
+    if (user.role === RoleName.DEPARTMENT_ADMIN) {
+      managedCategory = user.managedCategory || undefined;
+    }
+
     const payload = {
       userId: user.id,
       email: user.email || '',
       phone: user.phone,
       role: mapRoleToTokenRole(user.role),
+      ...(managedCategory && { managedCategory }),
     };
 
     const tokens = jwtUtil.generateTokenPair(payload);
@@ -272,6 +280,7 @@ export class WebAuthController extends BaseController {
       role: user.role,
       roleType: user.roleType,
       categoryType: user.categoryType,
+      managedCategory: managedCategory,
       status: user.status,
       emailVerified: user.emailVerified,
       phoneVerified: user.phoneVerified,
@@ -288,7 +297,13 @@ export class WebAuthController extends BaseController {
     const user = await webAuthService.getUserById(userId);
     if (!user) throw new AppError('User not found', 404);
 
-const userResponse = {
+    // Get managed category for department admins
+    let managedCategory: string | undefined;
+    if (user.role === RoleName.DEPARTMENT_ADMIN) {
+      managedCategory = user.managedCategory || undefined;
+    }
+
+    const userResponse = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -298,6 +313,7 @@ const userResponse = {
       role: user.role,
       roleType: user.roleType,
       categoryType: user.categoryType,
+      managedCategory: managedCategory,
       status: user.status,
       emailVerified: user.emailVerified,
       phoneVerified: user.phoneVerified,

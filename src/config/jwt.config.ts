@@ -19,7 +19,8 @@ export interface IJWTConfig {
 export interface ITokenPayload {
   userId: string;
   email: string;
-  role: 'user' | 'admin' | 'superadmin' | 'delivery';
+  role: 'user' | 'admin' | 'superadmin' | 'departmentadmin' | 'delivery';
+  managedCategory?: string;
   iat?: number;
   exp?: number;
 }
@@ -35,6 +36,7 @@ export const mapRoleToTokenRole = (role: string): ITokenPayload['role'] => {
     USER: 'user',
     ADMIN: 'admin',
     SUPER_ADMIN: 'superadmin',
+    DEPARTMENT_ADMIN: 'departmentadmin',
     DELIVERY: 'delivery',
   };
   return roleMap[role] || 'user';

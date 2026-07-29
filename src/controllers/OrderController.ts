@@ -6,6 +6,7 @@ import { AppError } from '../utils/app-error.util';
 import { realtimeService } from '../services/RealtimeService';
 import { isValidUUID } from '../utils/uuid.util';
 import { orderItemRepository } from '../database/repositories/index';
+import { getAdminClient } from '../database/supabase';
 
 type AuthReq = import('../middlewares/auth.middleware').AuthRequest;
 
@@ -31,6 +32,64 @@ export class OrderController extends CrudController<IOrder> {
     const offset = (pageNum - 1) * limitNum;
 
     const filter: Record<string, any> = {};
+
+    // Department Admin filtering - only show orders containing their category products
+    const userRole = req.user?.role;
+    if (userRole === 'departmentadmin') {
+      const managedCategory = (req as any).user?.managedCategory;
+      if (!managedCategory) {
+        throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
+      }
+
+      // For department admin, we need to filter orders that contain products from their category
+      const client = getAdminClient();
+      
+      // Get order IDs that contain products from the department admin's category using a join
+      const { data: orderItems, error: orderItemsError } = await client
+        .from('order_items')
+        .select('order_id, product_id')
+        .eq('is_deleted', false);
+
+      if (orderItemsError) {
+        throw new AppError('Failed to filter orders by category', 500, 'FILTER_ERROR');
+      }
+
+      // Get product IDs in the managed category
+      const { data: categoryProducts, error: productsError } = await client
+        .from('products')
+        .select('id')
+        .eq('category', managedCategory)
+        .eq('is_deleted', false);
+
+      if (productsError) {
+        throw new AppError('Failed to fetch category products', 500, 'PRODUCTS_ERROR');
+      }
+
+      const categoryProductIds = new Set(categoryProducts?.map((p: any) => p.id) || []);
+      
+      // Filter order items to only those with products in the managed category
+      const orderIds = new Set(
+        orderItems
+          ?.filter((oi: any) => categoryProductIds.has(oi.product_id))
+          .map((oi: any) => oi.order_id) || []
+      );
+
+      if (orderIds.size === 0) {
+        // No orders found for this category
+        return res.status(200).json({
+          success: true,
+          data: [],
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total: 0,
+            totalPages: 1,
+          },
+        });
+      }
+
+      filter.id = { $in: Array.from(orderIds) };
+    }
 
     if (search && typeof search === 'string') {
       const term = search.trim().toLowerCase();
@@ -106,19 +165,14 @@ export class OrderController extends CrudController<IOrder> {
       orderNumber: req.body.orderNumber || `ORD-${Date.now()}`,
     };
     
-    console.log("ORDER REQUEST BODY:", JSON.stringify(req.body, null, 2));
-    console.log("ORDER PAYLOAD:", JSON.stringify(payload, null, 2));
     
     // Create the order first
     const created = await orderService.create(payload as any);
     
     // If items are provided in the request, create order items
     const items = req.body.items;
-    console.log(`[ORDER CREATE] Received ${items?.length || 0} items in request for order ${created.id}`);
-    console.log(`[ORDER CREATE] Items data:`, JSON.stringify(items, null, 2));
     
     if (items && Array.isArray(items) && items.length > 0) {
-      console.log(`[ORDER CREATE] Creating ${items.length} order items for order ${created.id}`);
       
       for (const item of items) {
         try {
@@ -136,14 +190,12 @@ export class OrderController extends CrudController<IOrder> {
             currency: item.currency || 'USD',
             status: 'PENDING' as any,
           };
-          console.log(`[ORDER CREATE] Creating order item:`, JSON.stringify(orderItem, null, 2));
           await orderItemRepository.create(orderItem);
         } catch (itemError) {
           console.error(`[ORDER CREATE] Failed to create order item for product ${item.productId}:`, itemError);
         }
       }
       
-      console.log(`[ORDER CREATE] Successfully created order items for order ${created.id}`);
     } else {
       console.log(`[ORDER CREATE] No items provided in request for order ${created.id}`);
     }
@@ -169,6 +221,42 @@ export class OrderController extends CrudController<IOrder> {
     // Validate UUID format
     if (!isValidUUID(req.params.id)) {
       return this.sendError(res, 'Invalid order ID', 400);
+    }
+
+    // Department Admin can only update orders in their category
+    const userRole = req.user?.role;
+    if (userRole === 'departmentadmin') {
+      const managedCategory = (req as any).user?.managedCategory;
+      if (!managedCategory) {
+        throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
+      }
+
+      // Verify the order contains products from the department admin's category
+      const client = getAdminClient();
+      
+      // Get order items for this order
+      const { data: orderItems, error: orderItemsError } = await client
+        .from('order_items')
+        .select('product_id')
+        .eq('order_id', req.params.id)
+        .eq('is_deleted', false);
+
+      if (orderItemsError || !orderItems || orderItems.length === 0) {
+        throw new AppError('Access denied. Order does not contain products from your category.', 403, 'CATEGORY_MISMATCH');
+      }
+
+      // Get product IDs in the managed category
+      const productIds = orderItems.map((oi: any) => oi.product_id);
+      const { data: categoryProducts, error: productsError } = await client
+        .from('products')
+        .select('id')
+        .eq('category', managedCategory)
+        .eq('is_deleted', false)
+        .in('id', productIds);
+
+      if (productsError || !categoryProducts || categoryProducts.length === 0) {
+        throw new AppError('Access denied. Order does not contain products from your category.', 403, 'CATEGORY_MISMATCH');
+      }
     }
 
     const updated = await orderService.updateById(req.params.id, req.body as any);

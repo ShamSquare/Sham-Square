@@ -16,6 +16,7 @@ export interface IWebUser {
    role: string;
    roleType: string;
    categoryType?: CategoryType | null;
+   managedCategory?: string | null;
    status: string;
    emailVerified: boolean;
    phoneVerified: boolean;
