@@ -288,7 +288,13 @@ export class WebAuthController extends BaseController {
       createdAt: user.createdAt,
     };
 
-    return this.sendSuccess(res, { user: userResponse, token: tokens.accessToken });
+    return this.sendSuccess(res, {
+  user: userResponse,
+  tokens: {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+  },
+});
   }
   async me(req: Request, res: Response) {
     const userId = (req as any).user?.userId;

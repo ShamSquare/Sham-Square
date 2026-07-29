@@ -9,6 +9,8 @@ export interface IOrderItem {
   productName: string;
   variantName: string;
   thumbnail?: string;
+  selectedColor?: string;
+  selectedSize?: string;
   quantity: number;
   unitPrice: number;
   discount: number;

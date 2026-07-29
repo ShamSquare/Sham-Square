@@ -6,6 +6,7 @@ import { OrderStatus, CartStatus } from '../database/enums/index';
 import { AppError } from '../utils/app-error.util';
 import { realtimeService } from '../services/RealtimeService';
 import { BaseController } from './BaseController';
+import { validateStock, deductStock } from '../utils/stock.util';
 
 export class CartController extends CrudController<ICart> {
   constructor() {
@@ -18,6 +19,7 @@ export class CartController extends CrudController<ICart> {
 
     const payment = req.body?.payment || { method: 'COD' };
     const shippingAddress = req.body?.shippingAddress;
+    const addressId = req.body?.addressId;
 
     const cart = await cartRepository.findOne({ userId, status: 'ACTIVE' as any });
     if (!cart) throw new AppError('Active cart not found', 404);
@@ -25,6 +27,13 @@ export class CartController extends CrudController<ICart> {
     const items = await cartItemRepository.find({ cartId: cart.id });
     const activeItems = items.filter((it : any) => !it.isDeleted);
     if (activeItems.length === 0) throw new AppError('Cart is empty', 400);
+
+    // Validate stock before creating the order
+    const stockItems = activeItems.map((it: any) => ({
+      productId: it.productId,
+      quantity: it.quantity || 1,
+    }));
+    await validateStock(stockItems);
 
     const subtotal = activeItems.reduce((s: any, it: any) => s + (it.unitPrice || 0) * (it.quantity || 1), 0);
     const pricing = { subtotal, discount: 0, shipping: 0, tax: 0, total: subtotal, currency: cart.currency || 'USD' };
@@ -34,6 +43,7 @@ export class CartController extends CrudController<ICart> {
       userId: cart.userId!,
       payment,
       shippingAddress: shippingAddress || {},
+      addressId: addressId || null,
       pricing,
     });
 
@@ -45,11 +55,20 @@ export class CartController extends CrudController<ICart> {
         productName: it.productName,
         variantName: it.variantName,
         thumbnail: it.thumbnail,
+        selectedColor: it.selectedColor || undefined,
+        selectedSize: it.selectedSize || undefined,
         quantity: it.quantity,
         unitPrice: it.unitPrice,
         lineTotal: it.lineTotal,
         currency: it.currency,
       });
+    }
+
+    // Deduct stock after successful order item creation
+    try {
+      await deductStock(stockItems);
+    } catch (stockError) {
+      console.error(`[CART CONVERT] Stock deduction failed for order ${createdOrder.id}:`, stockError);
     }
 
     await cartRepository.updateById(cart.id, {

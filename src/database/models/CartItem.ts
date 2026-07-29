@@ -9,6 +9,8 @@ export interface ICartItem {
   productName: string;
   variantName: string;
   thumbnail?: string;
+  selectedColor?: string;
+  selectedSize?: string;
   vendorId?: string | null;
   isDeleted: boolean;
   deletedAt?: Date | null;

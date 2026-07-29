@@ -25,6 +25,7 @@ export interface IOrder {
   shippingAddress: Record<string, unknown>;
   billingAddress?: Record<string, unknown> | null;
   shippingAddressId?: string | null;
+  addressId?: string | null;
   pricing: {
     subtotal: number;
     discount: number;

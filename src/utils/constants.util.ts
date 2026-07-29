@@ -78,7 +78,6 @@ export const NOTIFICATION = {
 // Order constants
 export const ORDER = {
   PENDING_EXPIRY_HOURS: 24,
-  PAYMENT_TIMEOUT_HOURS: 1,
 };
 
 // Coupon constants

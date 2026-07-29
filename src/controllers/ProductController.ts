@@ -6,6 +6,7 @@ import { sanitizeUUIDFields, isValidUUID } from '../utils/uuid.util';
 import { CategoryType, SubCategory } from '../database/enums/index';
 import { AppError } from '../utils/app-error.util';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { getAdminClient } from '../database/supabase';
 
 const UUID_FIELDS = ['vendorId', 'brandId', 'createdBy', 'updatedBy'];
 
@@ -230,6 +231,14 @@ export class ProductController extends CrudController<IProduct> {
   async list(req: AuthRequest, res: any) {
     try {
       const userRole = req.user?.role;
+      const { search, category, status, page = '1', limit = '50', sortBy = 'newest' } = req.query;
+
+      const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+      const limitNum = Math.min(200, Math.max(1, parseInt(limit as string, 10) || 50));
+      const offset = (pageNum - 1) * limitNum;
+
+      const client = getAdminClient();
+      let query = client.from('products').select('*', { count: 'exact' }).eq('is_deleted', false as any);
 
       // Department Admin: filter by managed category
       if (userRole === 'departmentadmin') {
@@ -241,14 +250,45 @@ export class ProductController extends CrudController<IProduct> {
             code: 'NO_MANAGED_CATEGORY',
           });
         }
-
-        const items = await productService.find({ category: managedCategory } as any);
-        return this.sendSuccess(res, items);
+        query = query.eq('category', managedCategory);
+      } else if (category && typeof category === 'string') {
+        query = query.eq('category', category);
       }
 
-      // SUPER_ADMIN and ADMIN: return all products
-      const items = await productService.find({});
-      return this.sendSuccess(res, items);
+      // Status filter
+      if (status && typeof status === 'string') {
+        query = query.eq('status', status.toUpperCase());
+      }
+
+      // Search filter: use ILIKE on name
+      if (search && typeof search === 'string') {
+        query = query.ilike('name', `%${search}%`);
+      }
+
+      // Sorting
+      if (sortBy === 'oldest') {
+        query = query.order('created_at', { ascending: true });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      // Pagination
+      query = query.range(offset, offset + limitNum - 1);
+
+      const { data: items, error, count } = await query;
+
+      if (error) throw error;
+
+      return res.status(200).json({
+        success: true,
+        data: items || [],
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: count || 0,
+          totalPages: Math.ceil((count || 0) / limitNum),
+        },
+      });
     } catch (error: any) {
       return res.status(500).json({
         success: false,

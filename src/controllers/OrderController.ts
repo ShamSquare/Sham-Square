@@ -7,6 +7,7 @@ import { realtimeService } from '../services/RealtimeService';
 import { isValidUUID } from '../utils/uuid.util';
 import { orderItemRepository } from '../database/repositories/index';
 import { getAdminClient } from '../database/supabase';
+import { validateStock, deductStock } from '../utils/stock.util';
 
 type AuthReq = import('../middlewares/auth.middleware').AuthRequest;
 
@@ -19,7 +20,6 @@ export class OrderController extends CrudController<IOrder> {
     const {
       search,
       status,
-      paymentStatus,
       dateFrom,
       dateTo,
       sortBy = 'newest',
@@ -117,10 +117,6 @@ export class OrderController extends CrudController<IOrder> {
       filter.status = status.toUpperCase();
     }
 
-    if (paymentStatus && typeof paymentStatus === 'string') {
-      filter['payment.status'] = paymentStatus.toUpperCase();
-    }
-
     if (dateFrom || dateTo) {
       filter.createdAt = {};
       if (dateFrom && typeof dateFrom === 'string') {
@@ -170,21 +166,27 @@ export class OrderController extends CrudController<IOrder> {
     const userId = req.user?.userId;
     if (!userId) throw new AppError('Unauthorized', 401);
 
+    const items = req.body.items;
+    const orderItems = (items && Array.isArray(items) ? items : []).map((item: any) => ({
+      productId: item.productId || item.product_id || '',
+      quantity: item.quantity || 1,
+    }));
+
+    // Validate stock before creating the order
+    if (orderItems.length > 0) {
+      await validateStock(orderItems);
+    }
+
     const payload = {
       ...req.body,
       userId,
       orderNumber: req.body.orderNumber || `ORD-${Date.now()}`,
     };
-    
-    
-    // Create the order first
+
     const created = await orderService.create(payload as any);
-    
-    // If items are provided in the request, create order items
-    const items = req.body.items;
-    
-    if (items && Array.isArray(items) && items.length > 0) {
-      
+
+    if (orderItems.length > 0) {
+
       for (const item of items) {
         try {
           const orderItem = {
@@ -195,6 +197,8 @@ export class OrderController extends CrudController<IOrder> {
             productName: item.productName || item.product_name || 'Unknown Product',
             variantName: item.variantName || item.variant_name || '',
             thumbnail: item.thumbnail || item.productImage || '',
+            selectedColor: item.selectedColor || undefined,
+            selectedSize: item.selectedSize || item.selectedOption || undefined,
             quantity: item.quantity || 1,
             unitPrice: item.unitPrice || item.price || 0,
             lineTotal: item.lineTotal || (item.unitPrice || item.price || 0) * (item.quantity || 1),
@@ -207,10 +211,18 @@ export class OrderController extends CrudController<IOrder> {
         }
       }
       
+      // Deduct stock after successful order item creation
+      try {
+        await deductStock(orderItems);
+      } catch (stockError) {
+        console.error(`[ORDER CREATE] Stock deduction failed for order ${created.id}:`, stockError);
+        // Order is already created — log but don't block the response
+      }
+
     } else {
       console.log(`[ORDER CREATE] No items provided in request for order ${created.id}`);
     }
-    
+
     realtimeService.emitToUser(String(userId), 'order:created', created);
     realtimeService.emitToAdmins('order:created', created);
 

@@ -1,23 +1,30 @@
-import { AddressLabel } from '../enums/index';
-
 export interface IAddress {
   id: string;
   userId: string;
-  label: AddressLabel;
+
+  // Contact information
   fullName: string;
   phone: string;
-  addressLine1: string;
-  addressLine2?: string;
-  city: string;
-  state: string;
+
+  // Location hierarchy
   country: string;
+  city: string;
+  area: string;
+  street: string;
+  building: string;
+  floor: string;
+  apartment: string;
   postalCode: string;
-  location?: {
-    type: 'Point';
-    coordinates: [number, number];
-  };
+
+  // Optional
+  notes: string;
+  latitude?: number | null;
+  longitude?: number | null;
+
+  // Flags
   isDefault: boolean;
-  deliveryInstructions?: string;
+
+  // Soft delete & audit
   isDeleted: boolean;
   deletedAt?: Date | null;
   deletedBy?: string | null;

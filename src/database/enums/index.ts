@@ -54,19 +54,10 @@ export enum OrderItemStatus {
 
 export enum PaymentMethod {
   COD = 'COD',
-  // Future gateways — schema-ready, not active yet
-  STRIPE = 'STRIPE',
-  PAYPAL = 'PAYPAL',
-  RAZORPAY = 'RAZORPAY',
 }
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
-  AUTHORIZED = 'AUTHORIZED',
-  CAPTURED = 'CAPTURED',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
-  CANCELLED = 'CANCELLED',
 }
 
 export enum CartStatus {

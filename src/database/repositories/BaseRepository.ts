@@ -1,5 +1,7 @@
 import { getAdminClient } from '../supabase';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient, PostgrestFilterBuilder } from '@supabase/supabase-js';
+
+type FilterValue = string | number | boolean | null;
 
 function camelToSnake(key: string): string {
   return key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
@@ -65,15 +67,23 @@ export abstract class BaseRepository<T extends Record<string, any>> {
     return result ? (convertKeysFromDb(result) as T) : null;
   }
 
+  private applyEqFilters(
+    query: PostgrestFilterBuilder<any, any, any, any, any>,
+    filter: Record<string, unknown>
+  ): PostgrestFilterBuilder<any, any, any, any, any> {
+    for (const [key, value] of Object.entries(filter)) {
+      if (value !== undefined) {
+        query = query.eq(key, value as FilterValue);
+      }
+    }
+    return query;
+  }
+
   async findOne(filter: Partial<T>): Promise<T | null> {
     const dbFilter = convertKeysToDb(filter);
     let query = this.client.from(this.tableName).select('*');
 
-    for (const [key, value] of Object.entries(dbFilter)) {
-      if (value !== undefined) {
-        query = query.eq(key, value);
-      }
-    }
+    query = this.applyEqFilters(query, dbFilter);
 
     const { data: result, error } = await query.maybeSingle();
 
@@ -89,11 +99,7 @@ export abstract class BaseRepository<T extends Record<string, any>> {
 
     if (filter) {
       const dbFilter = convertKeysToDb(filter);
-      for (const [key, value] of Object.entries(dbFilter)) {
-        if (value !== undefined) {
-          query = query.eq(key, value);
-        }
-      }
+      query = this.applyEqFilters(query, dbFilter);
     }
 
     if (options?.orderBy) {
@@ -130,11 +136,7 @@ export abstract class BaseRepository<T extends Record<string, any>> {
     const dbFilter = convertKeysToDb(filter);
     let query = this.client.from(this.tableName).update(convertKeysToDb(data)).select();
 
-    for (const [key, value] of Object.entries(dbFilter)) {
-      if (value !== undefined) {
-        query = query.eq(key, value);
-      }
-    }
+    query = this.applyEqFilters(query, dbFilter);
 
     const { data: result, error } = await query.single();
 
@@ -172,10 +174,8 @@ export abstract class BaseRepository<T extends Record<string, any>> {
 
     let finalQuery = query as any;
 
-    for (const [key, value] of Object.entries(dbFilter)) {
-      if (value !== undefined) {
-        finalQuery = finalQuery.eq(key, value);
-      }
+    if (Object.keys(dbFilter).length > 0) {
+      finalQuery = this.applyEqFilters(finalQuery, dbFilter);
     }
 
     const { error } = await finalQuery;
@@ -188,11 +188,7 @@ export abstract class BaseRepository<T extends Record<string, any>> {
 
     if (filter) {
       const dbFilter = convertKeysToDb(filter);
-      for (const [key, value] of Object.entries(dbFilter)) {
-        if (value !== undefined) {
-          query = query.eq(key, value);
-        }
-      }
+      query = this.applyEqFilters(query, dbFilter);
     }
 
     const { count, error } = await query;

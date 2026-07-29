@@ -309,8 +309,8 @@ export const schemas: Record<string, object> = {
       payment: {
         type: 'object',
         properties: {
-          method: { type: 'string', enum: ['COD', 'STRIPE', 'PAYPAL', 'RAZORPAY'] },
-          status: { type: 'string', enum: ['PENDING', 'AUTHORIZED', 'CAPTURED', 'FAILED', 'REFUNDED', 'CANCELLED'] },
+          method: { type: 'string', enum: ['COD'] },
+          status: { type: 'string', enum: ['PENDING'] },
           transactionId: { type: 'string', nullable: true },
           paidAt: { type: 'string', format: 'date-time', nullable: true },
           refundAmount: { type: 'number', minimum: 0 },
@@ -362,7 +362,7 @@ export const schemas: Record<string, object> = {
         type: 'object',
         required: ['method'],
         properties: {
-          method: { type: 'string', enum: ['COD', 'STRIPE', 'PAYPAL', 'RAZORPAY'], example: 'COD' },
+          method: { type: 'string', enum: ['COD'], example: 'COD' },
           transactionId: { type: 'string' },
         },
       },

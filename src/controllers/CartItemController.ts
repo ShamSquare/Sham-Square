@@ -31,7 +31,7 @@ export class CartItemController extends CrudController<ICartItem> {
         throw new AppError('User not authenticated', 401, 'UNAUTHORIZED');
       }
 
-      const { productId, quantity = 1 } = req.body;
+      const { productId, quantity = 1, selectedColor, selectedOption } = req.body;
       if (!productId) {
         return res.status(400).json({
           success: false,
@@ -103,6 +103,8 @@ export class CartItemController extends CrudController<ICartItem> {
           variantId: defaultVariant?.id || product.id,
           quantity: qty,
           unitPrice,
+          selectedColor: selectedColor || undefined,
+          selectedSize: selectedOption || undefined,
           lineTotal: unitPrice * qty,
           currency: 'USD',
           productName,
