@@ -26,8 +26,6 @@ function transformProductPayload(data: Record<string, any>): Record<string, any>
   if (data.tags) {
     transformed.tags = Array.isArray(data.tags) ? data.tags : String(data.tags).split(',').map((t: string) => t.trim()).filter(Boolean);
   }
-console.log("TRANSFORMED:", transformed);
-  // Generate slug from name if not provided
   if (!transformed.slug && data.name) {
     transformed.slug = String(data.name)
       .toLowerCase()
@@ -353,7 +351,13 @@ export class ProductController extends CrudController<IProduct> {
       if (userRole === 'departmentadmin') {
         // Department Admin must have a managed category
         const managedCategory = (req as any).user?.managedCategory;
+        console.log('[PRODUCT CREATE DEBUG] DEPARTMENT_ADMIN check:', {
+          userId: req.user?.userId,
+          role: userRole,
+          jwtManagedCategory: managedCategory,
+        });
         if (!managedCategory) {
+          console.log('[PRODUCT CREATE DEBUG] NO_MANAGED_CATEGORY - throwing error');
           throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
         }
 
@@ -404,9 +408,18 @@ export class ProductController extends CrudController<IProduct> {
       const userRole = req.user?.role;
       if (userRole === 'departmentadmin') {
         // Department Admin cannot change the category
+        const managedCategory = (req as any).user?.managedCategory;
+        console.log('[PRODUCT UPDATE DEBUG] DEPARTMENT_ADMIN check:', {
+          userId: req.user?.userId,
+          role: userRole,
+          jwtManagedCategory: managedCategory,
+        });
         if (transformed.category) {
-          const managedCategory = (req as any).user?.managedCategory;
           if (transformed.category !== managedCategory) {
+            console.log('[PRODUCT UPDATE DEBUG] CATEGORY_MISMATCH:', {
+              transformedCategory: transformed.category,
+              managedCategory,
+            });
             throw new AppError(
               `Access denied. You can only manage products in the ${managedCategory} category.`,
               403,

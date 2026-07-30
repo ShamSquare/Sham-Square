@@ -98,7 +98,6 @@ export class AndroidSmsGateway implements SmsProvider {
 
 export class MockSmsProvider implements SmsProvider {
   async sendSms(phone: string, message: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    console.log(`[MOCK SMS] To: ${phone}, Message: ${message}`);
     return { success: true, messageId: `mock-${Date.now()}` };
   }
 }
@@ -151,7 +150,7 @@ export class OtpService {
       lastSentAt: now,
     };
 
-    const message = `Your verification code is: ${code}. Valid for ${this.config.expiresInMinutes} minutes.`;
+    const message = `Your code is: ${code}. Valid for ${this.config.expiresInMinutes} minutes.`;
     const result = await this.provider.sendSms(normalizedPhone, message);
 
     if (!result.success) {

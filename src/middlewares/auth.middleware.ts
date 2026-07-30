@@ -1,19 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import jwtUtil, { isTokenBlacklisted } from '../utils/jwt.util';
 import { AppError } from '../utils/app-error.util';
+import { webAuthService } from '../services/WebAuthService';
+import { RoleName } from '../database/enums/index';
 
 export interface AuthRequest extends Request {
   user?: {
     userId: string;
     role?: string;
     managedCategory?: string;
+    categoryType?: string;
   };
 }
 
 /**
  * Protect routes (JWT verification)
  */
-export const protect = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -29,10 +32,24 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
 
     const decoded = jwtUtil.verifyAccessToken(token);
 
+    let managedCategory = decoded.managedCategory;
+    let dbCategoryType: string | undefined;
+
+    // Reload managedCategory from database for DEPARTMENT_ADMIN to ensure
+    // the latest assignment is used even if the JWT is stale or missing it.
+    if (decoded.role === 'departmentadmin') {
+      const dbUser = await webAuthService.getUserById(decoded.userId);
+      if (dbUser && dbUser.role === RoleName.DEPARTMENT_ADMIN) {
+        dbCategoryType = dbUser.categoryType || undefined;
+        managedCategory = dbUser.managedCategory || dbCategoryType || managedCategory;
+      }
+    }
+
     req.user = {
       userId: decoded.userId,
       role: decoded.role,
-      managedCategory: decoded.managedCategory,
+      managedCategory,
+      ...(dbCategoryType && { categoryType: dbCategoryType }),
     };
 
     next();

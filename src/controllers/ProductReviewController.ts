@@ -3,6 +3,20 @@ import { productReviewService, productService } from '../services/index';
 import { getAdminClient } from '../database/supabase';
 import type { IProductReview } from '../database/models/index';
 import { AppError } from '../utils/app-error.util';
+import { isValidUUID } from '../utils/uuid.util';
+
+function convertKeysFromDb(obj: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === 'sub_category') {
+      result.sub_category = value;
+    } else {
+      const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+      result[camelKey] = value;
+    }
+  }
+  return result;
+}
 
 export class ProductReviewController extends CrudController<IProductReview> {
   constructor() {
@@ -11,20 +25,61 @@ export class ProductReviewController extends CrudController<IProductReview> {
 
   async list(req: any, res: any) {
     try {
-      const filter: Record<string, any> = {};
-      if (req.query.productId) {
-        filter.productId = req.query.productId;
+      const client = getAdminClient();
+      const {
+        productId,
+        userId,
+        limit = '20',
+        offset = '0',
+        orderBy = 'created_at',
+        orderDir = 'desc',
+      } = req.query;
+
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 20));
+      const offsetNum = Math.max(0, parseInt(offset as string, 10) || 0);
+
+      let query = client.from('product_reviews').select('*', { count: 'exact' });
+
+      const userRole = req.user?.role;
+      if (userRole === 'departmentadmin') {
+        const managedCategory = (req as any).user?.managedCategory;
+        if (!managedCategory) {
+          throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
+        }
+
+        const { data: categoryProducts } = await client
+          .from('products')
+          .select('id')
+          .eq('category', managedCategory)
+          .eq('is_deleted', false as any);
+
+        const categoryProductIds = categoryProducts?.map((p: any) => p.id) || [];
+        if (categoryProductIds.length === 0) {
+          return this.sendSuccess(res, []);
+        }
+
+        query = query.in('product_id', categoryProductIds);
       }
-      if (req.query.userId) {
-        filter.userId = req.query.userId;
+
+      if (productId) {
+        query = query.eq('product_id', productId);
       }
-      const options: { limit?: number; offset?: number; orderBy?: string; orderDir?: 'asc' | 'desc' } = {};
-      if (req.query.limit) options.limit = parseInt(req.query.limit, 10);
-      if (req.query.offset) options.offset = parseInt(req.query.offset, 10);
-      if (req.query.orderBy) options.orderBy = req.query.orderBy;
-      if (req.query.orderDir) options.orderDir = req.query.orderDir === 'desc' ? 'desc' : 'asc';
-      const items = await productReviewService.find(filter, options);
-      return this.sendSuccess(res, items);
+
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+
+      query = query.eq('is_deleted', false as any);
+      query = query.order(orderBy as string, { ascending: orderDir !== 'desc' });
+      query = query.range(offsetNum, offsetNum + limitNum - 1);
+
+      const { data: reviews, error, count } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return this.sendSuccess(res, (reviews || []).map((r: any) => convertKeysFromDb(r)));
     } catch (error: any) {
       return res.status(400).json({
         success: false,
@@ -34,11 +89,6 @@ export class ProductReviewController extends CrudController<IProductReview> {
     }
   }
 
-  /**
-   * Admin endpoint: fetch all reviews with product and user data joined.
-   * Supports filtering, searching, sorting, and pagination.
-   * GET /api/v1/product-reviews/admin-list
-   */
   async adminList(req: any, res: any) {
     try {
       const client = getAdminClient();
@@ -58,15 +108,16 @@ export class ProductReviewController extends CrudController<IProductReview> {
       const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
       const offset = (pageNum - 1) * limitNum;
 
-      // Department Admin filtering - only show reviews for products in their category
       const userRole = req.user?.role;
+      let managedCategory: string | undefined;
+      let categoryProductIds: string[] = [];
+
       if (userRole === 'departmentadmin') {
-        const managedCategory = (req as any).user?.managedCategory;
+        managedCategory = (req as any).user?.managedCategory;
         if (!managedCategory) {
           throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
         }
 
-        // Get product IDs in the managed category
         const { data: categoryProducts, error: productsError } = await client
           .from('products')
           .select('id')
@@ -77,24 +128,9 @@ export class ProductReviewController extends CrudController<IProductReview> {
           throw new AppError('Failed to fetch category products', 500, 'PRODUCTS_ERROR');
         }
 
-        const categoryProductIds = categoryProducts?.map((p: any) => p.id) || [];
-        
-        if (categoryProductIds.length === 0) {
-          // No products in this category
-          return res.json({
-            success: true,
-            data: [],
-            pagination: {
-              page: pageNum,
-              limit: limitNum,
-              total: 0,
-              totalPages: 1,
-            },
-          });
-        }
+        categoryProductIds = categoryProducts?.map((p: any) => p.id) || [];
 
-        // If productId filter is provided, validate it's in the managed category
-        if (productId && !categoryProductIds.includes(productId as string)) {
+        if (categoryProductIds.length === 0) {
           return res.json({
             success: true,
             data: [],
@@ -108,7 +144,6 @@ export class ProductReviewController extends CrudController<IProductReview> {
         }
       }
 
-      // Build the base query with joins
       let query = client
         .from('product_reviews')
         .select(`
@@ -117,7 +152,6 @@ export class ProductReviewController extends CrudController<IProductReview> {
           user:users!user_id(id, first_name, last_name, avatar, email)
         `, { count: 'exact' });
 
-      // Apply filters
       if (rating) {
         const ratingNum = parseInt(rating, 10);
         if (ratingNum >= 1 && ratingNum <= 5) {
@@ -141,33 +175,16 @@ export class ProductReviewController extends CrudController<IProductReview> {
         query = query.eq('user_id', userId);
       }
 
-      // Department Admin category filter
-      if (userRole === 'departmentadmin') {
-        const managedCategory = (req as any).user?.managedCategory;
-        if (managedCategory) {
-          const { data: categoryProducts } = await client
-            .from('products')
-            .select('id')
-            .eq('category', managedCategory)
-            .eq('is_deleted', false as any);
-
-          const categoryProductIds = categoryProducts?.map((p: any) => p.id) || [];
-          if (categoryProductIds.length > 0) {
-            query = query.in('product_id', categoryProductIds);
-          }
-        }
+      if (userRole === 'departmentadmin' && categoryProductIds.length > 0) {
+        query = query.in('product_id', categoryProductIds);
       }
 
-      // Search across review title, comment
       if (search && search.trim()) {
         const searchTerm = `%${search.trim()}%`;
         query = query.or(`title.ilike.${searchTerm},comment.ilike.${searchTerm}` as any);
       }
 
-      // Only show non-deleted reviews
       query = query.eq('is_deleted', false as any);
-
-      // Apply pagination
       query = query.range(offset, offset + limitNum - 1);
 
       const { data: reviews, error, count } = await query;
@@ -179,7 +196,6 @@ export class ProductReviewController extends CrudController<IProductReview> {
         });
       }
 
-      // If search term provided, also search in product/user names (post-filter since Supabase doesn't support cross-table ilike easily)
       let result = reviews || [];
       if (search && search.trim()) {
         const searchLower = search.trim().toLowerCase();
@@ -216,16 +232,52 @@ export class ProductReviewController extends CrudController<IProductReview> {
     }
   }
 
+  async getById(req: any, res: any) {
+    try {
+      if (!isValidUUID(req.params.id)) {
+        return this.sendError(res, 'Invalid review ID', 400);
+      }
+
+      const review = await productReviewService.getById(req.params.id);
+      if (!review) {
+        return this.sendError(res, 'Not found', 404);
+      }
+
+      const userRole = req.user?.role;
+      if (userRole === 'departmentadmin') {
+        const managedCategory = (req as any).user?.managedCategory;
+        if (!managedCategory) {
+          throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
+        }
+
+        const client = getAdminClient();
+        const { data: product } = await client
+          .from('products')
+          .select('category')
+          .eq('id', review.productId)
+          .single();
+
+        if (!product || product.category !== managedCategory) {
+          throw new AppError('Access denied. Review is not in your managed category.', 403, 'CATEGORY_MISMATCH');
+        }
+      }
+
+      return this.sendSuccess(res, review);
+    } catch (error: any) {
+      return res.status(400).json({
+        success: false,
+        message: error?.message || 'فشل جلب المراجعة',
+        code: error?.code,
+      });
+    }
+  }
+
   async create(req: any, res: any) {
     try {
-      // Directly create the review via service (don't use super.create which sends response)
       const created = await productReviewService.create(req.body as any);
-      
-      // Update product rating after review is created
       if (created && created.productId) {
         await productService.updateProductRating(created.productId);
       }
-      
       return this.sendCreated(res, created);
     } catch (error: any) {
       return res.status(400).json({
@@ -238,17 +290,13 @@ export class ProductReviewController extends CrudController<IProductReview> {
 
   async update(req: any, res: any) {
     try {
-      // Directly update the review via service
       const updated = await productReviewService.updateById(req.params.id, req.body as any);
       if (!updated) {
         return this.sendError(res, 'Not found', 404);
       }
-      
-      // Update
       if (updated && updated.productId) {
         await productService.updateProductRating(updated.productId);
       }
-      
       return this.sendSuccess(res, updated);
     } catch (error: any) {
       return res.status(400).json({
@@ -261,22 +309,43 @@ export class ProductReviewController extends CrudController<IProductReview> {
 
   async remove(req: any, res: any) {
     try {
-      // Get review before deletion to know which product to update
-      const existing = await productReviewService.getById(req.params.id);
-      const productId = existing?.productId;
-      
-      await productReviewService.deleteById(req.params.id);
-      
-      // Update product rating after review is deleted
-      if (productId) {
-        await productService.updateProductRating(productId);
+      if (!isValidUUID(req.params.id)) {
+        return this.sendError(res, 'Invalid review ID', 400);
       }
-      
+
+      const existing = await productReviewService.getById(req.params.id);
+      if (!existing) {
+        return this.sendError(res, 'Not found', 404);
+      }
+
+      const userRole = req.user?.role;
+      if (userRole === 'departmentadmin') {
+        const managedCategory = (req as any).user?.managedCategory;
+        if (!managedCategory) {
+          throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
+        }
+
+        const client = getAdminClient();
+        const { data: product } = await client
+          .from('products')
+          .select('category')
+          .eq('id', existing.productId)
+          .single();
+
+        if (!product || product.category !== managedCategory) {
+          throw new AppError('Access denied. Review is not in your managed category.', 403, 'CATEGORY_MISMATCH');
+        }
+      }
+
+      await productReviewService.deleteById(req.params.id);
+      if (existing.productId) {
+        await productService.updateProductRating(existing.productId);
+      }
       return res.status(204).send();
     } catch (error: any) {
       return res.status(400).json({
         success: false,
-        message: error?.message || 'فشل حذف التقييم',
+        message: error?.message || 'فشل حذف المراجعة',
         code: error?.code,
       });
     }

@@ -130,7 +130,7 @@ export const otpService = {
     // Send via SMS-Gate
     const smsResult = await smsGateService.sendSms(
       normalizedPhone,
-      `Your verification code is: ${code}. It expires in 5 minutes.`,
+      `The code is: ${code}. It expires in 5 mins`,
     );
 
     if (!smsResult.success) {

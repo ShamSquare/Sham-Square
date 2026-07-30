@@ -36,7 +36,8 @@ export class OrderController extends CrudController<IOrder> {
     // Department Admin filtering - only show orders containing their category products
     const userRole = req.user?.role;
     if (userRole === 'departmentadmin') {
-      const managedCategory = (req as any).user?.managedCategory;
+      const managedCategory = (req as any).user?.managedCategory ||
+        (req as any).user?.categoryType;
       if (!managedCategory) {
         throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
       }
@@ -280,8 +281,8 @@ if (req.body.couponCode) {
             productName: item.productName || item.product_name || 'Unknown Product',
             variantName: item.variantName || item.variant_name || '',
             thumbnail: item.thumbnail || item.productImage || '',
-            selectedColor: item.selectedColor || undefined,
-            selectedSize: item.selectedSize || item.selectedOption || undefined,
+            selectedColor: item.selectedColor || item.selected_color || undefined,
+            selectedSize: item.selectedSize || item.selected_size || item.selectedOption || item.selected_option || undefined,
             quantity: item.quantity || 1,
             unitPrice: item.unitPrice || item.price || 0,
             lineTotal: item.lineTotal || (item.unitPrice || item.price || 0) * (item.quantity || 1),
@@ -294,25 +295,6 @@ if (req.body.couponCode) {
         }
       }
       
-      // Deduct stock after successful order item creation
-      if (orderItems.length > 0) {
-        console.log('[STOCK DEBUG] ===== Starting Stock Deduction =====');
-        console.log('[STOCK DEBUG] Order ID:', created.id);
-        
-        for (const item of orderItems) {
-          console.log('[STOCK DEBUG] Product ID:', item.productId);
-          console.log('[STOCK DEBUG] Purchased Quantity:', item.quantity);
-        }
-        
-        try {
-          await deductStock(orderItems);
-          console.log('[STOCK DEBUG] Stock deduction completed successfully');
-        } catch (stockError) {
-          console.error(`[STOCK DEBUG] Stock deduction FAILED for order ${created.id}:`, stockError);
-          console.error('[STOCK DEBUG] This is the root cause - stock was not updated!');
-          // Order is already created — log but don't block the response
-        }
-      }
 
     } else {
       console.log(`[ORDER CREATE] No items provided in request for order ${created.id}`);
@@ -341,41 +323,7 @@ if (req.body.couponCode) {
       return this.sendError(res, 'Invalid order ID', 400);
     }
 
-    // Department Admin can only update orders in their category
-    const userRole = req.user?.role;
-    if (userRole === 'departmentadmin') {
-      const managedCategory = (req as any).user?.managedCategory;
-      if (!managedCategory) {
-        throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
-      }
-
-      // Verify the order contains products from the department admin's category
-      const client = getAdminClient();
-      
-      // Get order items for this order
-      const { data: orderItems, error: orderItemsError } = await client
-        .from('order_items')
-        .select('product_id')
-        .eq('order_id', req.params.id)
-        .eq('is_deleted', false as any);
-
-      if (orderItemsError || !orderItems || orderItems.length === 0) {
-        throw new AppError('Access denied. Order does not contain products from your category.', 403, 'CATEGORY_MISMATCH');
-      }
-
-      // Get product IDs in the managed category
-      const productIds = orderItems.map((oi: any) => oi.product_id);
-      const { data: categoryProducts, error: productsError } = await client
-        .from('products')
-        .select('id')
-        .eq('category', managedCategory)
-        .eq('is_deleted', false as any)
-        .in('id', productIds);
-
-      if (productsError || !categoryProducts || categoryProducts.length === 0) {
-        throw new AppError('Access denied. Order does not contain products from your category.', 403, 'CATEGORY_MISMATCH');
-      }
-    }
+    await this.assertOrderInManagedCategory(req, req.params.id);
 
     // Get the current order status before update
     const existingOrder = await orderService.getById(req.params.id);
@@ -392,14 +340,6 @@ if (req.body.couponCode) {
 
     // If order is being confirmed, update stock and total_sold
     if (isBeingConfirmed) {
-      console.log('\n========================================');
-      console.log('ORDER CONFIRMATION - STOCK UPDATE STARTED');
-      console.log('========================================');
-      console.log('Order ID:', req.params.id);
-      console.log('Order Number:', (updated as any).orderNumber);
-      console.log('Status Change:', oldStatus, '→', newStatus);
-      console.log('========================================\n');
-
       try {
         // Fetch order items
         const client = getAdminClient();
@@ -413,7 +353,6 @@ if (req.body.couponCode) {
           throw new AppError('No order items found for this order', 404, 'NO_ORDER_ITEMS');
         }
 
-        console.log(`[STOCK UPDATE] Found ${orderItemsData.length} order items`);
 
         // Group items by product_id and sum quantities
         const productQuantities = new Map<string, number>();
@@ -428,12 +367,9 @@ if (req.body.couponCode) {
           }
         }
 
-        console.log(`[STOCK UPDATE] Grouped into ${productQuantities.size} unique products\n`);
 
         // Process each product
         for (const [productId, purchasedQuantity] of Array.from(productQuantities.entries())) {
-          console.log('----------------------------------------');
-          
           // Step 1: Fetch current product stock
           const { data: product, error: productError } = await client
             .from('products')
@@ -449,30 +385,10 @@ if (req.body.couponCode) {
           const currentStock = product.stock;
           const previousTotalSold = product.total_sold;
 
-          console.log('CURRENT PRODUCT STOCK:');
-          console.log('Product ID:', product.id);
-          console.log('Product Name:', product.name);
-          console.log('Current Stock:', currentStock);
-
-          // Step 2: Calculate new total_sold
           const newTotalSold = previousTotalSold + purchasedQuantity;
 
-          console.log('\nTOTAL SOLD CALCULATION:');
-          console.log('Product ID:', product.id);
-          console.log('Previous Total Sold:', previousTotalSold);
-          console.log('Purchased Quantity:', purchasedQuantity);
-          console.log('New Total Sold:', newTotalSold);
-
-          // Step 3: Calculate new stock
           const newStock = currentStock - purchasedQuantity;
 
-          console.log('\nSTOCK UPDATE:');
-          console.log('Product ID:', product.id);
-          console.log('Old Stock:', currentStock);
-          console.log('Purchased Quantity:', purchasedQuantity);
-          console.log('New Stock:', newStock);
-
-          // Validate stock is not negative
           if (newStock < 0) {
             console.error('\n[STOCK UPDATE] ERROR: Insufficient stock!');
             console.error(`Product ${product.id} (${product.name}): requested ${purchasedQuantity}, but only ${currentStock} available`);
@@ -502,29 +418,9 @@ if (req.body.couponCode) {
             );
           }
 
-          console.log('\nDATABASE UPDATE SUCCESS:');
-          console.log('Product ID:', product.id);
-          console.log('Updated Stock:', newStock);
-          console.log('Updated Total Sold:', newTotalSold);
-          console.log('----------------------------------------\n');
         }
 
-        console.log('\n========================================');
-        console.log('ORDER CONFIRMATION - STOCK UPDATE COMPLETED');
-        console.log('========================================');
-        console.log('Order ID:', req.params.id);
-        console.log('Products Updated:', productQuantities.size);
-        console.log('========================================\n');
       } catch (stockError: any) {
-        console.error('\n========================================');
-        console.error('ORDER CONFIRMATION - STOCK UPDATE FAILED');
-        console.error('========================================');
-        console.error('Order ID:', req.params.id);
-        console.error('Error:', stockError.message);
-        console.error('Rolling back order confirmation...');
-        console.error('========================================\n');
-
-        // Rollback: revert order status back to previous status
         try {
           await orderService.updateById(req.params.id, { status: oldStatus });
           console.log('[STOCK UPDATE] Order status rolled back to:', oldStatus);
@@ -541,6 +437,68 @@ if (req.body.couponCode) {
     }
     realtimeService.emitToAdmins('order:updated', updated);
     return res.status(200).json({ success: true, data: updated });
+  }
+
+  private async assertOrderInManagedCategory(req: AuthReq, orderId: string): Promise<void> {
+    const userRole = req.user?.role;
+    if (userRole !== 'departmentadmin') {
+      return;
+    }
+
+    const managedCategory = (req as any).user?.managedCategory ||
+      (req as any).user?.categoryType;
+    if (!managedCategory) {
+      throw new AppError('Department Admin must have a managed category assigned', 403, 'NO_MANAGED_CATEGORY');
+    }
+
+    const client = getAdminClient();
+
+    const { data: orderItems, error: orderItemsError } = await client
+      .from('order_items')
+      .select('product_id')
+      .eq('order_id', orderId)
+      .eq('is_deleted', false as any);
+
+    if (orderItemsError || !orderItems || orderItems.length === 0) {
+      throw new AppError('Access denied. Order does not contain products from your category.', 403, 'CATEGORY_MISMATCH');
+    }
+
+    const productIds = orderItems.map((oi: any) => oi.product_id);
+    const { data: categoryProducts, error: productsError } = await client
+      .from('products')
+      .select('id')
+      .eq('category', managedCategory)
+      .eq('is_deleted', false as any)
+      .in('id', productIds);
+
+    if (productsError || !categoryProducts || categoryProducts.length === 0) {
+      throw new AppError('Access denied. Order does not contain products from your category.', 403, 'CATEGORY_MISMATCH');
+    }
+  }
+
+  async getById(req: AuthReq, res: any) {
+    if (!isValidUUID(req.params.id)) {
+      return this.sendError(res, 'Invalid order ID', 400);
+    }
+
+    await this.assertOrderInManagedCategory(req, req.params.id);
+
+    const order = await orderService.getById(req.params.id);
+    if (!order) {
+      return this.sendError(res, 'Order not found', 404);
+    }
+    return this.sendSuccess(res, order);
+  }
+
+  async remove(req: AuthReq, res: any) {
+    if (!isValidUUID(req.params.id)) {
+      return this.sendError(res, 'Invalid order ID', 400);
+    }
+
+    await this.assertOrderInManagedCategory(req, req.params.id);
+
+    await orderService.deleteById(req.params.id);
+    return this.sendNoContent(res);
   }
 }
 

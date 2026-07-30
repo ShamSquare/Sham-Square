@@ -91,11 +91,18 @@ export class WebAuthController extends BaseController {
     if (!user?.id) {
       throw new Error("User ID is missing");
     }
+    // Get managed category for department admins
+    let managedCategory: string | undefined;
+    if (user.role === RoleName.DEPARTMENT_ADMIN) {
+      managedCategory = user.managedCategory || user.categoryType || undefined;
+    }
+
     const payload = {
       userId: user?.id,
       phone: user?.phone,
-      email: user?.email || '',
+      email: user.email || '',
       role: mapRoleToTokenRole(user?.role || 'USER'),
+      ...(managedCategory && { managedCategory }),
     };
     const tokens = jwtUtil.generateTokenPair(payload);
 
@@ -199,11 +206,17 @@ export class WebAuthController extends BaseController {
       throw new AppError('User not found', 404);
     }
 
+    let managedCategory: string | undefined;
+    if (user.role === RoleName.DEPARTMENT_ADMIN) {
+      managedCategory = user.managedCategory || user.categoryType || undefined;
+    }
+
     const payload = {
       userId: user.id,
       email: user.email,
       phone: user.phone,
       role: mapRoleToTokenRole(user.role),
+      ...(managedCategory && { managedCategory }),
     };
     const tokens = jwtUtil.generateTokenPair(payload);
 
@@ -257,7 +270,7 @@ export class WebAuthController extends BaseController {
     // Get managed category for department admins
     let managedCategory: string | undefined;
     if (user.role === RoleName.DEPARTMENT_ADMIN) {
-      managedCategory = user.managedCategory || undefined;
+      managedCategory = user.managedCategory || user.categoryType || undefined;
     }
 
     const payload = {
@@ -306,7 +319,7 @@ export class WebAuthController extends BaseController {
     // Get managed category for department admins
     let managedCategory: string | undefined;
     if (user.role === RoleName.DEPARTMENT_ADMIN) {
-      managedCategory = user.managedCategory || undefined;
+      managedCategory = user.managedCategory || user.categoryType || undefined;
     }
 
     const userResponse = {

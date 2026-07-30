@@ -66,7 +66,12 @@ export class AuthController extends BaseController {
     const { refreshToken } = req.body;
     if (!refreshToken) throw new AppError('Missing refresh token', 400);
     const decoded = jwtUtil.verifyRefreshToken(refreshToken);
-    const payload = { userId: decoded.userId, email: decoded.email, role: decoded.role };
+    const payload = {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+      ...(decoded.managedCategory && { managedCategory: decoded.managedCategory }),
+    };
     const tokens = jwtUtil.generateTokenPair(payload);
     return this.sendSuccess(res, { tokens });
   }

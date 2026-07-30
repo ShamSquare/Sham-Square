@@ -92,7 +92,6 @@ async function migrateDepartmentsToCategories(): Promise<void> {
     }
 
     if (!products || products.length === 0) {
-      console.log('✅ No products to migrate');
       return;
     }
 

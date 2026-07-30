@@ -10,5 +10,4 @@
 //   node --import tsx src/server.ts   ← alternative if you prefer direct ESM
 // ═══════════════════════════════════════════════════════════════════════════════
 
-console.log("SERVER JS LOADED");
 require('./dist/server');

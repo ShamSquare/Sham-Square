@@ -37,6 +37,7 @@ export const mapRoleToTokenRole = (role: string): ITokenPayload['role'] => {
     ADMIN: 'admin',
     SUPER_ADMIN: 'superadmin',
     DEPARTMENT_ADMIN: 'departmentadmin',
+    CATEGORY_ADMIN: 'departmentadmin',
     DELIVERY: 'delivery',
   };
   return roleMap[role] || 'user';

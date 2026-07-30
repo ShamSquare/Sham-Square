@@ -13,7 +13,7 @@ const options = {
 
     servers: [
       {
-        url: `http://localhost:5000`,
+        url: `https://ashityshop.onrender.com`,
         description: 'Development server',
       },
     ],

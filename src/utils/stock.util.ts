@@ -47,18 +47,12 @@ export async function deductStock(items: StockItem[]): Promise<void> {
   const client = getAdminClient();
 
   for (const item of items) {
-    console.log('[STOCK DEBUG] Calling adjust_stock RPC:');
-    console.log('[STOCK DEBUG]   Product ID:', item.productId);
-    console.log('[STOCK DEBUG]   Quantity:', item.quantity);
-    
     const { error, data } = await client.rpc('adjust_stock', {
       p_product_id: item.productId,
       p_quantity: item.quantity,
     });
 
     if (error) {
-      console.error(`[STOCK DEBUG] RPC Error for product ${item.productId}:`, error);
-      console.error('[STOCK DEBUG] Error details:', JSON.stringify(error, null, 2));
       throw new AppError(
         `Failed to update stock for product ${item.productId}: ${error.message}`,
         500,
@@ -66,6 +60,5 @@ export async function deductStock(items: StockItem[]): Promise<void> {
       );
     }
     
-    console.log('[STOCK DEBUG] RPC Success for product', item.productId, '- Result:', data);
   }
 }

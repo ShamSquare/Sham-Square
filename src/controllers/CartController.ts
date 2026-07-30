@@ -20,15 +20,14 @@ export class CartController extends CrudController<ICart> {
     const payment = req.body?.payment || { method: 'COD' };
     const shippingAddress = req.body?.shippingAddress;
     const addressId = req.body?.addressId;
-
+    const checkoutItems = req.body?.items;
     const cart = await cartRepository.findOne({ userId, status: 'ACTIVE' as any });
     if (!cart) throw new AppError('Active cart not found', 404);
 
-    const items = await cartItemRepository.find({ cartId: cart.id });
+    const items = checkoutItems;
     const activeItems = items.filter((it : any) => !it.isDeleted);
     if (activeItems.length === 0) throw new AppError('Cart is empty', 400);
 
-    // Validate stock before creating the order
     const stockItems = activeItems.map((it: any) => ({
       productId: it.productId,
       quantity: it.quantity || 1,
@@ -47,22 +46,25 @@ export class CartController extends CrudController<ICart> {
       pricing,
     });
 
-    for (const it of activeItems) {
-      await orderItemRepository.create({
-        orderId: createdOrder.id,
-        productId: it.productId,
-        sku: '',
-        productName: it.productName,
-        variantName: it.variantName,
-        thumbnail: it.thumbnail,
-        selectedColor: it.selectedColor || undefined,
-        selectedSize: it.selectedSize || undefined,
-        quantity: it.quantity,
-        unitPrice: it.unitPrice,
-        lineTotal: it.lineTotal,
-        currency: it.currency,
-      });
-    }
+ for (const it of activeItems) {
+   const finalColor = it.selectedColor || it.selected_color || null;
+   const finalSize = it.selectedSize || it.selected_size || it.selectedOption || it.selected_option || null;
+
+   await orderItemRepository.create({
+     orderId: createdOrder.id,
+     productId: it.product?.id || it.productId,
+     sku: '',
+     productName: it.product?.nameAr || it.product?.name || it.productName,
+     variantName: '',
+     thumbnail: it.product?.thumbnail || it.product?.imageUrl || it.product?.image || it.thumbnail || '',
+     selectedColor: finalColor || undefined,
+     selectedSize: finalSize || undefined,
+     quantity: it.quantity,
+     unitPrice: it.product?.price || it.unitPrice || it.price || 0,
+     lineTotal: (it.product?.price || it.unitPrice || it.price || 0) * it.quantity,
+     currency: 'SYP',
+   });
+ }
 
     // Deduct stock after successful order item creation
     try {

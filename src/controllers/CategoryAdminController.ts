@@ -75,6 +75,7 @@ export class CategoryAdminController extends CrudController<IWebUser> {
       role: role || 'CATEGORY_ADMIN',
       roleType: 'category',
       categoryType: categoryType,
+      managedCategory: categoryType,
       status: status || 'ACTIVE',
       emailVerified: false,
       phoneVerified: false,
@@ -94,7 +95,10 @@ export class CategoryAdminController extends CrudController<IWebUser> {
     if (lastName !== undefined) updateData.lastName = lastName.trim();
     if (email !== undefined) updateData.email = email.trim();
     if (phone !== undefined) updateData.phone = phone.trim();
-    if (categoryType !== undefined) updateData.categoryType = categoryType;
+    if (categoryType !== undefined) {
+      updateData.categoryType = categoryType;
+      updateData.managedCategory = categoryType;
+    }
     if (role !== undefined) updateData.role = role;
     if (status !== undefined) updateData.status = status;
     if (avatar !== undefined) updateData.avatar = avatar;

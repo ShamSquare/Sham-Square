@@ -31,7 +31,7 @@ export class CartItemController extends CrudController<ICartItem> {
         throw new AppError('User not authenticated', 401, 'UNAUTHORIZED');
       }
 
-      const { productId, quantity = 1, selectedColor, selectedOption } = req.body;
+      const { productId, quantity = 1, selectedColor, selected_color, selectedSize, selected_size, selectedOption, selected_option } = req.body;
       if (!productId) {
         return res.status(400).json({
           success: false,
@@ -97,22 +97,16 @@ export class CartItemController extends CrudController<ICartItem> {
         cartItem = updated;
       } else {
         // Create new cart item with cartId
-        console.log("CREATING CART ITEM:", {
-  cartId: cart.id,
-  productId,
-  variantId: defaultVariant?.id || product.id,
-  quantity: qty,
-  selectedColor,
-  selectedSize: selectedOption
-});
+        const finalColor = selectedColor || selected_color || null;
+        const finalSize = selectedSize || selected_size || selectedOption || selected_option || null;
         const created = await cartItemService.create({
           cartId: cart.id,
           productId,
           variantId: defaultVariant?.id || product.id,
           quantity: qty,
           unitPrice,
-          selectedColor: selectedColor || undefined,
-          selectedSize: selectedOption || undefined,
+          selectedColor: finalColor || undefined,
+          selectedSize: finalSize || undefined,
           lineTotal: unitPrice * qty,
           currency: 'SYP',
           productName,

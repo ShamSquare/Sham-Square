@@ -95,7 +95,10 @@ export class OrderRepository extends BaseRepository<IOrder> {
 
       for (const [key, value] of Object.entries(dbFilter)) {
         if (value !== undefined && typeof value === 'object' && !Array.isArray(value)) {
-          // Handle special operators like $or, $ilike, etc. - skip for now
+          if ((value as any).$in !== undefined) {
+            query = query.in(key, (value as any).$in as any[]);
+            continue;
+          }
           continue;
         }
         if (value !== undefined && !(typeof value === 'object')) {
@@ -147,6 +150,14 @@ export class OrderRepository extends BaseRepository<IOrder> {
 
     if (filter) {
       for (const [key, value] of Object.entries(filter)) {
+        if (value !== undefined && typeof value === 'object' && !Array.isArray(value)) {
+          if ((value as any).$in !== undefined) {
+            const snakeKey = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
+            query = query.in(snakeKey, (value as any).$in as any[]);
+            continue;
+          }
+          continue;
+        }
         if (value !== undefined) {
           const snakeKey = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
           query = query.eq(snakeKey, value);
