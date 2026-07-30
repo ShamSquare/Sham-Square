@@ -53,7 +53,7 @@ export class CartItemController extends CrudController<ICartItem> {
         cart = await cartService.create({
           userId,
           status: CartStatus.ACTIVE,
-          currency: 'USD',
+          currency: 'SYP',
           subtotal: 0,
           discount: 0,
           shipping: 0,
@@ -97,6 +97,14 @@ export class CartItemController extends CrudController<ICartItem> {
         cartItem = updated;
       } else {
         // Create new cart item with cartId
+        console.log("CREATING CART ITEM:", {
+  cartId: cart.id,
+  productId,
+  variantId: defaultVariant?.id || product.id,
+  quantity: qty,
+  selectedColor,
+  selectedSize: selectedOption
+});
         const created = await cartItemService.create({
           cartId: cart.id,
           productId,
@@ -106,7 +114,7 @@ export class CartItemController extends CrudController<ICartItem> {
           selectedColor: selectedColor || undefined,
           selectedSize: selectedOption || undefined,
           lineTotal: unitPrice * qty,
-          currency: 'USD',
+          currency: 'SYP',
           productName,
           thumbnail,
           variantName: defaultVariant?.name || '',
@@ -114,7 +122,6 @@ export class CartItemController extends CrudController<ICartItem> {
         cartItem = created;
       }
 
-      // 4. Update cart item count and totals
       const allItems = await cartItemRepository.find({ cartId: cart.id } as any);
       const activeItems = allItems.filter((it: any) => !it.isDeleted);
       const itemCount = activeItems.reduce((sum: number, it: any) => sum + (it.quantity || 0), 0);

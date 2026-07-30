@@ -105,6 +105,106 @@ export class CouponService extends BaseService<ICoupon> {
 
     return super.updateById(id, sanitized);
   }
+async calculateDiscount(
+  code: string,
+  orderAmount: number,
+  userId?: string
+): Promise<{
+  valid: boolean;
+  coupon: ICoupon;
+  discount: number;
+  finalTotal: number;
+}> {
+  const coupon = await this.findOne({
+    code: code.trim().toUpperCase(),
+  });
+
+  if (!coupon) {
+    throw new AppError(
+      'Invalid coupon',
+      400,
+      'INVALID_COUPON'
+    );
+  }
+
+  const now = new Date();
+
+  if (coupon.startDate && new Date(coupon.startDate) > now) {
+    throw new AppError(
+      'Coupon has not started yet',
+      400,
+      'COUPON_NOT_STARTED'
+    );
+  }
+
+  if (coupon.endDate && new Date(coupon.endDate) < now) {
+    throw new AppError(
+      'Coupon has expired',
+      400,
+      'COUPON_EXPIRED'
+    );
+  }
+
+  if (
+    coupon.minOrderAmount &&
+    orderAmount < coupon.minOrderAmount
+  ) {
+    throw new AppError(
+      'Minimum order amount not reached',
+      400,
+      'MIN_ORDER_AMOUNT'
+    );
+  }
+
+  let discount = 0;
+
+  switch (coupon.type) {
+    case 'PERCENTAGE':
+      discount = (orderAmount * coupon.value) / 100;
+
+      if (
+        coupon.maxDiscount &&
+        discount > coupon.maxDiscount
+      ) {
+        discount = coupon.maxDiscount;
+      }
+      break;
+
+    case 'FIXED':
+      discount = coupon.value;
+      break;
+
+    case 'FREE_SHIPPING':
+      discount = 0;
+      break;
+  }
+
+  discount = Math.min(discount, orderAmount);
+
+  return {
+    valid: true,
+    coupon,
+    discount,
+    finalTotal: orderAmount - discount,
+  };
+}
+
+async incrementUsage(couponId: string): Promise<void> {
+  const coupon = await this.getById(couponId);
+
+  if (!coupon) {
+    throw new AppError(
+      'Coupon not found',
+      404,
+      'COUPON_NOT_FOUND'
+    );
+  }
+
+  await this.updateById(couponId, {
+    usageCount: (coupon.usageCount || 0) + 1,
+  });
+}
+  
 }
 
 export const couponService = new CouponService();

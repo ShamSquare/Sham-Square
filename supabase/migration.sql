@@ -862,6 +862,8 @@ create table if not exists order_items (
   status        order_item_status not null default 'PENDING',
   vendor_id     uuid,
   warehouse_id  uuid,
+  selected_color text,
+  selected_size  text,
   is_deleted    boolean not null default false,
   deleted_at    timestamptz,
   deleted_by    uuid,

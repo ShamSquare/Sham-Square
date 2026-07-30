@@ -113,7 +113,7 @@ export class ProductReviewController extends CrudController<IProductReview> {
         .from('product_reviews')
         .select(`
           *,
-          product:products!product_id(id, name, name_ar, image, thumbnail, images),
+          product:products!product_id(id, name, image, thumbnail, images),
           user:users!user_id(id, first_name, last_name, avatar, email)
         `, { count: 'exact' });
 
@@ -166,12 +166,6 @@ export class ProductReviewController extends CrudController<IProductReview> {
 
       // Only show non-deleted reviews
       query = query.eq('is_deleted', false as any);
-
-      // Apply sorting
-      const allowedOrderBy = ['created_at', 'updated_at', 'rating', 'title'];
-      const safeOrderBy = allowedOrderBy.includes(orderBy) ? orderBy : 'created_at';
-      const safeOrderDir = orderDir === 'asc' ? 'asc' : 'desc';
-      query = query.order(safeOrderBy, { ascending: safeOrderDir });
 
       // Apply pagination
       query = query.range(offset, offset + limitNum - 1);

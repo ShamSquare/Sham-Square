@@ -30,6 +30,22 @@ export class CouponController extends CrudController<ICoupon> {
     await couponService.deleteById(req.params.id);
     return this.sendNoContent(res);
   }
+
+  async validate(req: any, res: any): Promise<any> {
+  const { code, orderAmount } = req.body;
+
+  if (!code) {
+    return this.sendError(res, 'Coupon code is required', 400);
+  }
+
+  const result = await couponService.calculateDiscount(
+    code,
+    Number(orderAmount || 0),
+    req.user?.userId
+  );
+
+  return this.sendSuccess(res, result);
+}
 }
 
 export const couponController = new CouponController();

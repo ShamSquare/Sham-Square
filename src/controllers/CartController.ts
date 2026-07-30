@@ -36,7 +36,7 @@ export class CartController extends CrudController<ICart> {
     await validateStock(stockItems);
 
     const subtotal = activeItems.reduce((s: any, it: any) => s + (it.unitPrice || 0) * (it.quantity || 1), 0);
-    const pricing = { subtotal, discount: 0, shipping: 0, tax: 0, total: subtotal, currency: cart.currency || 'USD' };
+    const pricing = { subtotal, discount: 0, shipping: 0, tax: 0, total: subtotal, currency: 'SYP' };
 
     const createdOrder = await orderRepository.create({
       orderNumber: `ORD-${Date.now()}`,

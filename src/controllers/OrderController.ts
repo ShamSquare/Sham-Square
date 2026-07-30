@@ -1,5 +1,5 @@
 import { CrudController } from './CrudController';
-import { orderService, notificationService } from '../services/index';
+import { orderService, notificationService, couponService } from '../services/index';
 import type { IOrder } from '../database/models/index';
 import { OrderStatus } from '../database/enums/index';
 import { AppError } from '../utils/app-error.util';
@@ -177,13 +177,96 @@ export class OrderController extends CrudController<IOrder> {
       await validateStock(orderItems);
     }
 
-    const payload = {
-      ...req.body,
-      userId,
-      orderNumber: req.body.orderNumber || `ORD-${Date.now()}`,
-    };
+    const couponCode = req.body.couponCode;
+
+    let couponResult: Awaited<
+  ReturnType<typeof couponService.calculateDiscount>
+> | null = null;
+
+if (couponCode) {
+  couponResult = await couponService.calculateDiscount(
+    couponCode,
+    req.body.pricing.subtotal,
+    userId
+  );
+}
+
+const payload = {
+  ...req.body,
+
+  pricing: {
+    ...req.body.pricing,
+
+    discount: couponResult?.discount || 0,
+
+    total:
+      req.body.pricing.subtotal +
+      req.body.pricing.shipping +
+      req.body.pricing.tax -
+      (couponResult?.discount || 0),
+  },
+
+  couponId: couponResult?.coupon.id,
+
+  couponCode: couponResult?.coupon.code,
+
+  userId,
+
+  orderNumber:
+    req.body.orderNumber || `ORD-${Date.now()}`,
+};
+let appliedCoupon: Awaited<
+  ReturnType<typeof couponService.calculateDiscount>
+> | null = null;
+
+if (req.body.couponCode) {
+  appliedCoupon = await couponService.calculateDiscount(
+    req.body.couponCode,
+    payload.pricing.subtotal,
+    userId
+  );
+
+  payload.pricing.discount = appliedCoupon.discount;
+
+  payload.pricing.total =
+    payload.pricing.subtotal +
+    payload.pricing.shipping +
+    payload.pricing.tax -
+    appliedCoupon.discount;
+
+  payload.couponId = appliedCoupon.coupon.id;
+  payload.couponCode = appliedCoupon.coupon.code;
+}
+
+    if (req.body.couponCode) {
+  appliedCoupon = await couponService.calculateDiscount(
+    req.body.couponCode,
+    payload.pricing.subtotal,
+    userId
+  );
+
+  payload.pricing.discount = appliedCoupon.discount;
+
+  payload.pricing.total =
+    payload.pricing.subtotal +
+    payload.pricing.shipping +
+    payload.pricing.tax -
+    appliedCoupon.discount;
+
+  payload.couponId = appliedCoupon.coupon.id;
+  payload.couponCode = appliedCoupon.coupon.code;
+}
 
     const created = await orderService.create(payload as any);
+
+    if (couponResult) {
+  await couponService.incrementUsage(couponResult.coupon.id);
+}
+    if (appliedCoupon) {
+  await couponService.incrementUsage(
+    appliedCoupon.coupon.id
+  );
+}
 
     if (orderItems.length > 0) {
 
@@ -202,7 +285,7 @@ export class OrderController extends CrudController<IOrder> {
             quantity: item.quantity || 1,
             unitPrice: item.unitPrice || item.price || 0,
             lineTotal: item.lineTotal || (item.unitPrice || item.price || 0) * (item.quantity || 1),
-            currency: item.currency || 'USD',
+            currency: 'SYP',
             status: 'PENDING' as any,
           };
           await orderItemRepository.create(orderItem);
@@ -212,11 +295,23 @@ export class OrderController extends CrudController<IOrder> {
       }
       
       // Deduct stock after successful order item creation
-      try {
-        await deductStock(orderItems);
-      } catch (stockError) {
-        console.error(`[ORDER CREATE] Stock deduction failed for order ${created.id}:`, stockError);
-        // Order is already created — log but don't block the response
+      if (orderItems.length > 0) {
+        console.log('[STOCK DEBUG] ===== Starting Stock Deduction =====');
+        console.log('[STOCK DEBUG] Order ID:', created.id);
+        
+        for (const item of orderItems) {
+          console.log('[STOCK DEBUG] Product ID:', item.productId);
+          console.log('[STOCK DEBUG] Purchased Quantity:', item.quantity);
+        }
+        
+        try {
+          await deductStock(orderItems);
+          console.log('[STOCK DEBUG] Stock deduction completed successfully');
+        } catch (stockError) {
+          console.error(`[STOCK DEBUG] Stock deduction FAILED for order ${created.id}:`, stockError);
+          console.error('[STOCK DEBUG] This is the root cause - stock was not updated!');
+          // Order is already created — log but don't block the response
+        }
       }
 
     } else {
@@ -282,9 +377,163 @@ export class OrderController extends CrudController<IOrder> {
       }
     }
 
+    // Get the current order status before update
+    const existingOrder = await orderService.getById(req.params.id);
+    const oldStatus = existingOrder?.status;
+    const newStatus = (req.body as any).status;
+
+    // Check if order is being confirmed
+    const isBeingConfirmed = oldStatus !== 'CONFIRMED' && newStatus === 'CONFIRMED';
+
     const updated = await orderService.updateById(req.params.id, req.body as any);
     if (!updated) {
       return this.sendError(res, 'Order not found', 404);
+    }
+
+    // If order is being confirmed, update stock and total_sold
+    if (isBeingConfirmed) {
+      console.log('\n========================================');
+      console.log('ORDER CONFIRMATION - STOCK UPDATE STARTED');
+      console.log('========================================');
+      console.log('Order ID:', req.params.id);
+      console.log('Order Number:', (updated as any).orderNumber);
+      console.log('Status Change:', oldStatus, '→', newStatus);
+      console.log('========================================\n');
+
+      try {
+        // Fetch order items
+        const client = getAdminClient();
+        const { data: orderItemsData, error: orderItemsError } = await client
+          .from('order_items')
+          .select('*')
+          .eq('order_id', req.params.id)
+          .eq('is_deleted', false);
+
+        if (orderItemsError || !orderItemsData || orderItemsData.length === 0) {
+          throw new AppError('No order items found for this order', 404, 'NO_ORDER_ITEMS');
+        }
+
+        console.log(`[STOCK UPDATE] Found ${orderItemsData.length} order items`);
+
+        // Group items by product_id and sum quantities
+        const productQuantities = new Map<string, number>();
+        for (const item of orderItemsData) {
+          const productId = item.product_id;
+          const quantity = item.quantity;
+          
+          if (productQuantities.has(productId)) {
+            productQuantities.set(productId, productQuantities.get(productId)! + quantity);
+          } else {
+            productQuantities.set(productId, quantity);
+          }
+        }
+
+        console.log(`[STOCK UPDATE] Grouped into ${productQuantities.size} unique products\n`);
+
+        // Process each product
+        for (const [productId, purchasedQuantity] of Array.from(productQuantities.entries())) {
+          console.log('----------------------------------------');
+          
+          // Step 1: Fetch current product stock
+          const { data: product, error: productError } = await client
+            .from('products')
+            .select('id, name, stock, total_sold')
+            .eq('id', productId)
+            .single();
+
+          if (productError || !product) {
+            console.error(`[STOCK UPDATE] Product ${productId} not found:`, productError);
+            throw new AppError(`Product ${productId} not found`, 404, 'PRODUCT_NOT_FOUND');
+          }
+
+          const currentStock = product.stock;
+          const previousTotalSold = product.total_sold;
+
+          console.log('CURRENT PRODUCT STOCK:');
+          console.log('Product ID:', product.id);
+          console.log('Product Name:', product.name);
+          console.log('Current Stock:', currentStock);
+
+          // Step 2: Calculate new total_sold
+          const newTotalSold = previousTotalSold + purchasedQuantity;
+
+          console.log('\nTOTAL SOLD CALCULATION:');
+          console.log('Product ID:', product.id);
+          console.log('Previous Total Sold:', previousTotalSold);
+          console.log('Purchased Quantity:', purchasedQuantity);
+          console.log('New Total Sold:', newTotalSold);
+
+          // Step 3: Calculate new stock
+          const newStock = currentStock - purchasedQuantity;
+
+          console.log('\nSTOCK UPDATE:');
+          console.log('Product ID:', product.id);
+          console.log('Old Stock:', currentStock);
+          console.log('Purchased Quantity:', purchasedQuantity);
+          console.log('New Stock:', newStock);
+
+          // Validate stock is not negative
+          if (newStock < 0) {
+            console.error('\n[STOCK UPDATE] ERROR: Insufficient stock!');
+            console.error(`Product ${product.id} (${product.name}): requested ${purchasedQuantity}, but only ${currentStock} available`);
+            throw new AppError(
+              `Insufficient stock for "${product.name}": available ${currentStock}, requested ${purchasedQuantity}`,
+              400,
+              'INSUFFICIENT_STOCK'
+            );
+          }
+
+          // Step 4: Update database
+          const { error: updateError } = await client
+            .from('products')
+            .update({
+              stock: newStock,
+              total_sold: newTotalSold,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', productId);
+
+          if (updateError) {
+            console.error('\n[STOCK UPDATE] Database update failed:', updateError);
+            throw new AppError(
+              `Failed to update stock for product ${productId}: ${updateError.message}`,
+              500,
+              'STOCK_UPDATE_FAILED'
+            );
+          }
+
+          console.log('\nDATABASE UPDATE SUCCESS:');
+          console.log('Product ID:', product.id);
+          console.log('Updated Stock:', newStock);
+          console.log('Updated Total Sold:', newTotalSold);
+          console.log('----------------------------------------\n');
+        }
+
+        console.log('\n========================================');
+        console.log('ORDER CONFIRMATION - STOCK UPDATE COMPLETED');
+        console.log('========================================');
+        console.log('Order ID:', req.params.id);
+        console.log('Products Updated:', productQuantities.size);
+        console.log('========================================\n');
+      } catch (stockError: any) {
+        console.error('\n========================================');
+        console.error('ORDER CONFIRMATION - STOCK UPDATE FAILED');
+        console.error('========================================');
+        console.error('Order ID:', req.params.id);
+        console.error('Error:', stockError.message);
+        console.error('Rolling back order confirmation...');
+        console.error('========================================\n');
+
+        // Rollback: revert order status back to previous status
+        try {
+          await orderService.updateById(req.params.id, { status: oldStatus });
+          console.log('[STOCK UPDATE] Order status rolled back to:', oldStatus);
+        } catch (rollbackError) {
+          console.error('[STOCK UPDATE] Failed to rollback order status:', rollbackError);
+        }
+
+        return this.sendError(res, stockError.message || 'Failed to update stock. Order confirmation rolled back.', 500);
+      }
     }
 
     if ((updated as any).userId) {

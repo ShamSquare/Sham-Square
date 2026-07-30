@@ -28,3 +28,9 @@ export interface IOrderItem {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Alias for backward compatibility with snake_case field names
+export interface IOrderItemDb extends IOrderItem {
+  selected_color?: string;
+  selected_size?: string;
+}
