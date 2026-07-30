@@ -14,7 +14,6 @@ export function createCrudRoutes<T extends Record<string, any>>(
   router.put('/:id', asyncHandler(controller.update.bind(controller)));
   router.delete('/:id', asyncHandler(controller.remove.bind(controller)));
 
-  // ← أضف هذا
   configure?.(router);
 
   return router;
