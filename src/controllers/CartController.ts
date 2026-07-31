@@ -1,11 +1,12 @@
 import { CrudController } from './CrudController';
-import { cartService, notificationService } from '../services/index';
+import { cartService, notificationService, orderService } from '../services/index';
 import type { ICart } from '../database/models/index';
 import { cartRepository, orderRepository } from '../database/repositories/index';
 import { OrderStatus, CartStatus } from '../database/enums/index';
 import { AppError } from '../utils/app-error.util';
 import { realtimeService } from '../services/RealtimeService';
 import { validateStock } from '../utils/stock.util';
+import { getAdminClient } from '../database';
 
 export class CartController extends CrudController<ICart> {
   constructor() {
@@ -90,14 +91,20 @@ export class CartController extends CrudController<ICart> {
     realtimeService.emitToAdmins('order:created', order);
 
     try {
+      if (!order) {
+        console.error("NO ORDER FOUND")
+  return;
+}
+
+console.log(order.id);
       await notificationService.sendOrderStatusNotification(
         userId,
         order.orderNumber,
         OrderStatus.PENDING,
         order.id
       );
-    } catch {
-      // If notification fails, keep order creation intact.
+    } catch (error) {
+      console.error("ERROR HAPPEND : ", error)
     }
 
     return this.sendCreated(res, order);
