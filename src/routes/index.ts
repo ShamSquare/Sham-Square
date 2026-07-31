@@ -23,6 +23,7 @@ import { auditLogRoutes } from './auditLogRoutes';
 import { settingRoutes } from './settingRoutes';
 import { otpRoutes } from './otpRoutes';
 import { categoryAdminRoutes } from './categoryAdminRoutes';
+import { deliveryRoutes } from './deliveryRoutes';
 
 const router = Router();
 
@@ -50,5 +51,6 @@ router.use('/audit-logs', auditLogRoutes);
 router.use('/settings', settingRoutes);
 router.use('/', otpRoutes);
 router.use('/department-admins', categoryAdminRoutes);
+router.use('/delivery-users', deliveryRoutes);
 
 export { router as apiRouter };

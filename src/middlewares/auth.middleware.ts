@@ -45,6 +45,14 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
       }
     }
 
+    // For delivery users, ensure they have the correct role in the database
+    if (decoded.role === 'delivery') {
+      const dbUser = await webAuthService.getUserById(decoded.userId);
+      if (!dbUser || dbUser.role !== RoleName.DELIVERY) {
+        throw new AppError('Invalid delivery user', 403, 'INVALID_ROLE');
+      }
+    }
+
     req.user = {
       userId: decoded.userId,
       role: decoded.role,
