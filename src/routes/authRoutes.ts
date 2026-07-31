@@ -6,6 +6,7 @@ import { protect } from '../middlewares/auth.middleware';
 const router = Router();
 
 router.post('/register', asyncHandler(authController.register.bind(authController)));
+router.post('/complete-registration', asyncHandler(authController.completeRegistration.bind(authController)));
 router.post('/login', asyncHandler(authController.login.bind(authController)));
 router.post('/refresh', asyncHandler(authController.refresh.bind(authController)));
 router.post('/forgot-password', asyncHandler(authController.forgotPassword.bind(authController)));

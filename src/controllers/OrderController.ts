@@ -35,6 +35,13 @@ export class OrderController extends CrudController<IOrder> {
 
     // Department Admin filtering - only show orders containing their category products
     const userRole = req.user?.role;
+
+    // Regular users can only see their own orders
+    // Admins and Department Admins see all orders (with department admin category filtering)
+    if (userRole !== 'departmentadmin' && userRole !== 'admin' && userRole !== 'super_admin') {
+      filter.userId = req.user?.userId;
+    }
+
     if (userRole === 'departmentadmin') {
       const managedCategory = (req as any).user?.managedCategory ||
         (req as any).user?.categoryType;
@@ -365,6 +372,15 @@ export class OrderController extends CrudController<IOrder> {
     if (!order) {
       return this.sendError(res, 'Order not found', 404);
     }
+
+    // Regular users can only view their own orders
+    const userRole = req.user?.role;
+    if (userRole !== 'departmentadmin' && userRole !== 'admin' && userRole !== 'super_admin') {
+      if (order.userId !== req.user?.userId) {
+        return this.sendError(res, 'Order not found', 404);
+      }
+    }
+
     return this.sendSuccess(res, order);
   }
 

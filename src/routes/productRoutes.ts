@@ -5,9 +5,11 @@ import { asyncHandler } from '../controllers/asyncHandler';
 
 const router = Router();
 
-// All product routes require authentication so DEPARTMENT_ADMIN filtering can be enforced
-router.get('/', protect, asyncHandler(productController.list.bind(productController)));
-router.get('/:id', protect, asyncHandler(productController.getById.bind(productController)));
+// Public routes - products are publicly accessible for browsing
+router.get('/', asyncHandler(productController.list.bind(productController)));
+router.get('/:id', asyncHandler(productController.getById.bind(productController)));
+
+// Protected routes - only authenticated users can create, update, and delete products
 router.post('/', protect, asyncHandler(productController.create.bind(productController)));
 router.put('/:id', protect, asyncHandler(productController.update.bind(productController)));
 router.delete('/:id', protect, asyncHandler(productController.remove.bind(productController)));

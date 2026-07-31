@@ -5,39 +5,121 @@ import passwordUtil from '../utils/password.util';
 import { AppError } from '../utils/app-error.util';
 import { RoleName } from '../database/enums/index';
 import { BaseController } from './BaseController';
+import { otpService } from '../services/OtpService';
 
 interface IResetRecord {
   code: string;
   expiresAt: number;
 }
 
+interface IRegistrationRecord {
+  firstName: string;
+  lastName: string;
+  password: string;
+  expiresAt: number;
+}
+
 const resetStore: Record<string, IResetRecord> = {};
+const registrationStore = new Map<string, IRegistrationRecord>();
 
 export class AuthController extends BaseController {
   async register(req: Request, res: Response) {
-    const { email, password, firstName, lastName, phone } = req.body;
-    if (!email || !password || !firstName || !lastName) {
-      throw new AppError('Missing required fields', 400);
+    const { firstName, lastName, phone, password } = req.body;
+    
+    if (!firstName || !lastName || !phone || !password) {
+      throw new AppError('All fields are required', 400);
     }
 
-    const exists = await userService.exists({ email });
-    if (exists) throw new AppError('Email already in use', 409);
+    const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '');
+    
+    const existingUser = await userService.findOne({ phone: normalizedPhone });
+    if (existingUser) {
+      throw new AppError('Phone number is already registered', 409);
+    }
+
+    if (password.length < 8) {
+      throw new AppError('Password must be at least 8 characters', 400);
+    }
+
+    const otpResult = await otpService.sendOtp(normalizedPhone);
+    if (!otpResult.success) {
+      throw new AppError(otpResult.error || 'Failed to send verification code', 400);
+    }
+
+    // Store registration data temporarily
+    registrationStore.set(normalizedPhone, {
+      firstName,
+      lastName,
+      password,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    });
+
+    return this.sendSuccess(res, { 
+      success: true, 
+      message: 'Verification code sent to your phone',
+      phone: normalizedPhone 
+    });
+  }
+
+  async completeRegistration(req: Request, res: Response) {
+    const { phone, otp } = req.body;
+    
+    if (!phone || !otp) {
+      throw new AppError('Phone number and OTP are required', 400);
+    }
+
+    const normalizedPhone = phone.replace(/[\s\-\(\)]/g, '');
+
+    const otpResult = await otpService.verifyOtp(normalizedPhone, otp);
+    if (!otpResult.success) {
+      throw new AppError(otpResult.error || 'Invalid or expired verification code', 400);
+    }
+
+    const regData = registrationStore.get(normalizedPhone);
+    if (!regData || regData.expiresAt < Date.now()) {
+      registrationStore.delete(normalizedPhone);
+      throw new AppError('Registration data not found or expired. Please restart registration.', 400);
+    }
+
+    const existingUser = await userService.findOne({ phone: normalizedPhone });
+    if (existingUser) {
+      registrationStore.delete(normalizedPhone);
+      throw new AppError('Phone number is already registered', 409);
+    }
 
     const role = await roleService.findOne({ name: RoleName.USER });
     const roleId = role ? role.id : undefined;
 
-    const passwordHash = passwordUtil.hashPassword(password);
+    const passwordHash = passwordUtil.hashPassword(regData.password);
 
     const user = await userService.create({
-      email,
-      phone,
+      phone: normalizedPhone,
       passwordHash,
-      firstName,
-      lastName,
+      firstName: regData.firstName,
+      lastName: regData.lastName,
       roleId,
+      email: normalizedPhone + '@temp.com',
     });
 
-    return this.sendCreated(res, user);
+    registrationStore.delete(normalizedPhone);
+
+    const payload = {
+      userId: user.id,
+      email: user.email || '',
+      phone: user.phone,
+      role: 'user' as const,
+    };
+
+    const tokens = jwtUtil.generateTokenPair(payload);
+
+    return this.sendSuccess(res, { 
+      success: true,
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      tokens 
+    });
   }
 
   async login(req: Request, res: Response) {
@@ -78,43 +160,61 @@ export class AuthController extends BaseController {
 
   async forgotPassword(req: Request, res: Response) {
     const { identifier } = req.body;
-    if (!identifier) throw new AppError('Missing identifier', 400);
+    if (!identifier) throw new AppError('Phone number is required', 400);
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    resetStore[identifier] = { code, expiresAt: Date.now() + 1000 * 60 * 15 };
+    const normalizedPhone = identifier.replace(/[\s\-\(\)]/g, '');
 
-    // eslint-disable-next-line no-console
-    console.info(`Password reset code for ${identifier}: ${code}`);
+    const user = await userService.findOne({ phone: normalizedPhone });
+    if (!user) {
+      return this.sendSuccess(res, { resetCodeSent: true });
+    }
+
+    const smsResult = await otpService.sendOtp(normalizedPhone);
+    if (!smsResult.success) {
+      throw new AppError('Failed to send verification code', 400);
+    }
 
     return this.sendSuccess(res, { resetCodeSent: true });
   }
 
   async verifyResetCode(req: Request, res: Response) {
     const { identifier, code } = req.body;
-    const record = resetStore[identifier];
-    if (!record || record.code !== code || record.expiresAt < Date.now()) {
-      throw new AppError('Invalid or expired reset code', 400);
+    if (!identifier || !code) {
+      throw new AppError('Phone number and code are required', 400);
     }
+
+    const normalizedPhone = identifier.replace(/[\s\-\(\)]/g, '');
+
+    // Use OTP service to verify the code
+    const otpResult = await otpService.verifyOtp(normalizedPhone, code);
+    if (!otpResult.success) {
+      throw new AppError(otpResult.error || 'Invalid or expired reset code', 400);
+    }
+
     return this.sendSuccess(res, { verified: true });
   }
 
   async resetPassword(req: Request, res: Response) {
     const { identifier, code, password } = req.body;
-    const record = resetStore[identifier];
-    if (!record || record.code !== code || record.expiresAt < Date.now()) {
-      throw new AppError('Invalid or expired reset code', 400);
+    if (!identifier || !code || !password) {
+      throw new AppError('Phone number, code, and new password are required', 400);
     }
 
-    let user = await userService.findOne({ email: identifier });
-    if (!user) {
-      user = await userService.findOne({ phone: identifier });
+    const normalizedPhone = identifier.replace(/[\s\-\(\)]/g, '');
+
+    // Verify the OTP code again before resetting password
+    const otpResult = await otpService.verifyOtp(normalizedPhone, code);
+    if (!otpResult.success) {
+      throw new AppError(otpResult.error || 'Invalid or expired reset code', 400);
     }
+
+    // Find user by phone
+    const user = await userService.findOne({ phone: normalizedPhone });
     if (!user) throw new AppError('User not found', 404);
 
+    // Update password
     const passwordHash = passwordUtil.hashPassword(password);
     await userService.updateById(user.id, { passwordHash });
-
-    delete resetStore[identifier];
 
     return this.sendSuccess(res, { reset: true });
   }
