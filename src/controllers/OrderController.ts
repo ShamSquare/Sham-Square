@@ -151,7 +151,15 @@ export class OrderController extends CrudController<IOrder> {
 
     const totalPages = Math.max(1, Math.ceil(total / limitNum));
 
-
+    return res.status(200).json({
+      success: true,
+      data: items,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages,
+      },
     });
   }
 
