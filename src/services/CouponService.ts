@@ -2,6 +2,7 @@ import { BaseService } from './BaseService';
 import { couponRepository } from '../database/repositories/index';
 import type { ICoupon } from '../database/models/index';
 import { AppError } from '../utils/app-error.util';
+import { getAdminClient } from '../database/supabase';
 
 function normalizeDate(value: any): string | null {
   if (!value || typeof value !== 'string') return null;
@@ -190,19 +191,13 @@ async calculateDiscount(
 }
 
 async incrementUsage(couponId: string): Promise<void> {
-  const coupon = await this.getById(couponId);
+  const client = getAdminClient();
+  const { error } = await client.rpc('increment_coupon_usage', { p_coupon_id: couponId });
 
-  if (!coupon) {
-    throw new AppError(
-      'Coupon not found',
-      404,
-      'COUPON_NOT_FOUND'
-    );
+  if (error) {
+    const message = typeof error.message === 'string' ? error.message : 'Failed to increment coupon usage';
+    throw new AppError(message, 400, 'COUPON_USAGE_FAILED');
   }
-
-  await this.updateById(couponId, {
-    usageCount: (coupon.usageCount || 0) + 1,
-  });
 }
   
 }

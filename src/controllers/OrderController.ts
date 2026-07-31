@@ -5,8 +5,8 @@ import { OrderStatus } from '../database/enums/index';
 import { AppError } from '../utils/app-error.util';
 import { realtimeService } from '../services/RealtimeService';
 import { isValidUUID } from '../utils/uuid.util';
-import { orderItemRepository } from '../database/repositories/index';
 import { getAdminClient } from '../database/supabase';
+import { orderItemRepository } from '../database/repositories/index';
 import { validateStock, deductStock } from '../utils/stock.util';
 
 type AuthReq = import('../middlewares/auth.middleware').AuthRequest;
@@ -173,131 +173,89 @@ export class OrderController extends CrudController<IOrder> {
       quantity: item.quantity || 1,
     }));
 
-    // Validate stock before creating the order
-    if (orderItems.length > 0) {
-      await validateStock(orderItems);
+    if (orderItems.length === 0) {
+      throw new AppError('No items provided in request', 400);
     }
+
+    await validateStock(orderItems);
 
     const couponCode = req.body.couponCode;
 
-    let couponResult: Awaited<
-  ReturnType<typeof couponService.calculateDiscount>
-> | null = null;
+    let discount = 0;
+    let appliedCoupon: Awaited<ReturnType<typeof couponService.calculateDiscount>> | null = null;
+    if (couponCode) {
+      try {
+        appliedCoupon = await couponService.calculateDiscount(
+          couponCode,
+          req.body.pricing.subtotal,
+          userId
+        );
+        discount = appliedCoupon.discount;
+      } catch (err: any) {
+        return this.sendError(res, err.message || 'Invalid coupon', 400);
+      }
+    }
 
-if (couponCode) {
-  couponResult = await couponService.calculateDiscount(
-    couponCode,
-    req.body.pricing.subtotal,
-    userId
-  );
-}
-
-const payload = {
-  ...req.body,
-
-  pricing: {
-    ...req.body.pricing,
-
-    discount: couponResult?.discount || 0,
-
-    total:
-      req.body.pricing.subtotal +
-      req.body.pricing.shipping +
-      req.body.pricing.tax -
-      (couponResult?.discount || 0),
-  },
-
-  couponId: couponResult?.coupon.id,
-
-  couponCode: couponResult?.coupon.code,
-
-  userId,
-
-  orderNumber:
-    req.body.orderNumber || `ORD-${Date.now()}`,
-};
-let appliedCoupon: Awaited<
-  ReturnType<typeof couponService.calculateDiscount>
-> | null = null;
-
-if (req.body.couponCode) {
-  appliedCoupon = await couponService.calculateDiscount(
-    req.body.couponCode,
-    payload.pricing.subtotal,
-    userId
-  );
-
-  payload.pricing.discount = appliedCoupon.discount;
-
-  payload.pricing.total =
-    payload.pricing.subtotal +
-    payload.pricing.shipping +
-    payload.pricing.tax -
-    appliedCoupon.discount;
-
-  payload.couponId = appliedCoupon.coupon.id;
-  payload.couponCode = appliedCoupon.coupon.code;
-}
-
-    if (req.body.couponCode) {
-  appliedCoupon = await couponService.calculateDiscount(
-    req.body.couponCode,
-    payload.pricing.subtotal,
-    userId
-  );
-
-  payload.pricing.discount = appliedCoupon.discount;
-
-  payload.pricing.total =
-    payload.pricing.subtotal +
-    payload.pricing.shipping +
-    payload.pricing.tax -
-    appliedCoupon.discount;
-
-  payload.couponId = appliedCoupon.coupon.id;
-  payload.couponCode = appliedCoupon.coupon.code;
-}
+    const payload = {
+      ...req.body,
+      userId,
+      orderNumber: req.body.orderNumber || `ORD-${Date.now()}`,
+      pricing: {
+        ...req.body.pricing,
+        discount,
+        total:
+          req.body.pricing.subtotal +
+          req.body.pricing.shipping +
+          req.body.pricing.tax -
+          discount,
+      },
+    };
 
     const created = await orderService.create(payload as any);
 
-    if (couponResult) {
-  await couponService.incrementUsage(couponResult.coupon.id);
-}
     if (appliedCoupon) {
-  await couponService.incrementUsage(
-    appliedCoupon.coupon.id
-  );
-}
+      await couponService.incrementUsage(appliedCoupon.coupon.id);
+    }
 
+    for (const item of items || []) {
+      try {
+        const orderItem = {
+          orderId: created.id,
+          productId: item.productId || item.product_id || '',
+          variantId: item.variantId || item.variant_id || item.productId || item.product_id || '',
+          sku: item.sku || '',
+          productName: item.productName || item.product_name || 'Unknown Product',
+          variantName: item.variantName || item.variant_name || '',
+          thumbnail: item.thumbnail || item.productImage || '',
+          selectedColor: item.selectedColor || item.selected_color || undefined,
+          selectedSize: item.selectedSize || item.selected_size || item.selectedOption || item.selected_option || undefined,
+          quantity: item.quantity || 1,
+          unitPrice: item.unitPrice || item.price || 0,
+          lineTotal: item.lineTotal || (item.unitPrice || item.price || 0) * (item.quantity || 1),
+          currency: 'SYP',
+          status: 'PENDING' as any,
+        };
+        await orderItemRepository.create(orderItem);
+      } catch (itemError) {
+        console.error(`[ORDER CREATE] Failed to create order item for product ${item.productId}:`, itemError);
+      }
+    }
+
+    await deductStock(orderItems);
+
+    const client = getAdminClient();
     if (orderItems.length > 0) {
+      for (const item of orderItems) {
+        const { data: product } = await client
+          .from('products')
+          .select('id, name, stock, total_sold, price, category, thumbnail, isFeatured, status')
+          .eq('id', item.productId)
+          .single();
 
-      for (const item of items) {
-        try {
-          const orderItem = {
-            orderId: created.id,
-            productId: item.productId || item.product_id || '',
-            variantId: item.variantId || item.variant_id || item.productId || item.product_id || '',
-            sku: item.sku || '',
-            productName: item.productName || item.product_name || 'Unknown Product',
-            variantName: item.variantName || item.variant_name || '',
-            thumbnail: item.thumbnail || item.productImage || '',
-            selectedColor: item.selectedColor || item.selected_color || undefined,
-            selectedSize: item.selectedSize || item.selected_size || item.selectedOption || item.selected_option || undefined,
-            quantity: item.quantity || 1,
-            unitPrice: item.unitPrice || item.price || 0,
-            lineTotal: item.lineTotal || (item.unitPrice || item.price || 0) * (item.quantity || 1),
-            currency: 'SYP',
-            status: 'PENDING' as any,
-          };
-          await orderItemRepository.create(orderItem);
-        } catch (itemError) {
-          console.error(`[ORDER CREATE] Failed to create order item for product ${item.productId}:`, itemError);
+        if (product) {
+          realtimeService.emitPublic('inventory:updated', { product });
         }
       }
-      
-
-    } else {
-      console.log(`[ORDER CREATE] No items provided in request for order ${created.id}`);
     }
 
     realtimeService.emitToUser(String(userId), 'order:created', created);
@@ -305,7 +263,7 @@ if (req.body.couponCode) {
 
     try {
       await notificationService.sendOrderStatusNotification(
-        userId as any,
+        userId,
         created.orderNumber,
         OrderStatus.PENDING,
         created.id
@@ -318,117 +276,37 @@ if (req.body.couponCode) {
   }
 
   async update(req: AuthReq, res: any) {
-    // Validate UUID format
     if (!isValidUUID(req.params.id)) {
       return this.sendError(res, 'Invalid order ID', 400);
     }
 
     await this.assertOrderInManagedCategory(req, req.params.id);
 
-    // Get the current order status before update
     const existingOrder = await orderService.getById(req.params.id);
+    if (!existingOrder) {
+      return this.sendError(res, 'Order not found', 404);
+    }
+
     const oldStatus = existingOrder?.status;
     const newStatus = (req.body as any).status;
-
-    // Check if order is being confirmed
-    const isBeingConfirmed = oldStatus !== 'CONFIRMED' && newStatus === 'CONFIRMED';
+    const isBeingCancelled = oldStatus !== 'CANCELLED' && newStatus === 'CANCELLED';
 
     const updated = await orderService.updateById(req.params.id, req.body as any);
     if (!updated) {
       return this.sendError(res, 'Order not found', 404);
     }
 
-    // If order is being confirmed, update stock and total_sold
-    if (isBeingConfirmed) {
+    if (isBeingCancelled) {
       try {
-        // Fetch order items
         const client = getAdminClient();
-        const { data: orderItemsData, error: orderItemsError } = await client
-          .from('order_items')
-          .select('*')
-          .eq('order_id', req.params.id)
-          .eq('is_deleted', false);
-
-        if (orderItemsError || !orderItemsData || orderItemsData.length === 0) {
-          throw new AppError('No order items found for this order', 404, 'NO_ORDER_ITEMS');
-        }
-
-
-        // Group items by product_id and sum quantities
-        const productQuantities = new Map<string, number>();
-        for (const item of orderItemsData) {
-          const productId = item.product_id;
-          const quantity = item.quantity;
-          
-          if (productQuantities.has(productId)) {
-            productQuantities.set(productId, productQuantities.get(productId)! + quantity);
-          } else {
-            productQuantities.set(productId, quantity);
-          }
-        }
-
-
-        // Process each product
-        for (const [productId, purchasedQuantity] of Array.from(productQuantities.entries())) {
-          // Step 1: Fetch current product stock
-          const { data: product, error: productError } = await client
-            .from('products')
-            .select('id, name, stock, total_sold')
-            .eq('id', productId)
-            .single();
-
-          if (productError || !product) {
-            console.error(`[STOCK UPDATE] Product ${productId} not found:`, productError);
-            throw new AppError(`Product ${productId} not found`, 404, 'PRODUCT_NOT_FOUND');
-          }
-
-          const currentStock = product.stock;
-          const previousTotalSold = product.total_sold;
-
-          const newTotalSold = previousTotalSold + purchasedQuantity;
-
-          const newStock = currentStock - purchasedQuantity;
-
-          if (newStock < 0) {
-            console.error('\n[STOCK UPDATE] ERROR: Insufficient stock!');
-            console.error(`Product ${product.id} (${product.name}): requested ${purchasedQuantity}, but only ${currentStock} available`);
-            throw new AppError(
-              `Insufficient stock for "${product.name}": available ${currentStock}, requested ${purchasedQuantity}`,
-              400,
-              'INSUFFICIENT_STOCK'
-            );
-          }
-
-          // Step 4: Update database
-          const { error: updateError } = await client
-            .from('products')
-            .update({
-              stock: newStock,
-              total_sold: newTotalSold,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', productId);
-
-          if (updateError) {
-            console.error('\n[STOCK UPDATE] Database update failed:', updateError);
-            throw new AppError(
-              `Failed to update stock for product ${productId}: ${updateError.message}`,
-              500,
-              'STOCK_UPDATE_FAILED'
-            );
-          }
-
-        }
-
+        await client.rpc('cancel_order_stock_restore', { p_order_id: req.params.id });
       } catch (stockError: any) {
         try {
           await orderService.updateById(req.params.id, { status: oldStatus });
-          console.log('[STOCK UPDATE] Order status rolled back to:', oldStatus);
         } catch (rollbackError) {
-          console.error('[STOCK UPDATE] Failed to rollback order status:', rollbackError);
+          console.error('[STOCK RESTORE] Failed to rollback order cancellation:', rollbackError);
         }
-
-        return this.sendError(res, stockError.message || 'Failed to update stock. Order confirmation rolled back.', 500);
+        return this.sendError(res, stockError.message || 'Failed to restore stock. Order cancellation rolled back.', 500);
       }
     }
 

@@ -78,6 +78,10 @@ class RealtimeService {
     this.emit('public', type, payload);
   }
 
+  emitPublic<T>(type: RealtimeEvent, payload: T): void {
+    this.emit('public', type, payload);
+  }
+
   getOnlineUserIds(): string[] {
     return [...this.onlineUsers.keys()];
   }

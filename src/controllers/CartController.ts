@@ -1,12 +1,11 @@
 import { CrudController } from './CrudController';
 import { cartService, notificationService } from '../services/index';
 import type { ICart } from '../database/models/index';
-import { cartRepository, cartItemRepository, orderRepository, orderItemRepository } from '../database/repositories/index';
+import { cartRepository, orderRepository } from '../database/repositories/index';
 import { OrderStatus, CartStatus } from '../database/enums/index';
 import { AppError } from '../utils/app-error.util';
 import { realtimeService } from '../services/RealtimeService';
-import { BaseController } from './BaseController';
-import { validateStock, deductStock } from '../utils/stock.util';
+import { validateStock } from '../utils/stock.util';
 
 export class CartController extends CrudController<ICart> {
   constructor() {
@@ -25,7 +24,7 @@ export class CartController extends CrudController<ICart> {
     if (!cart) throw new AppError('Active cart not found', 404);
 
     const items = checkoutItems;
-    const activeItems = items.filter((it : any) => !it.isDeleted);
+    const activeItems = items.filter((it: any) => !it.isDeleted);
     if (activeItems.length === 0) throw new AppError('Cart is empty', 400);
 
     const stockItems = activeItems.map((it: any) => ({
@@ -37,66 +36,71 @@ export class CartController extends CrudController<ICart> {
     const subtotal = activeItems.reduce((s: any, it: any) => s + (it.unitPrice || 0) * (it.quantity || 1), 0);
     const pricing = { subtotal, discount: 0, shipping: 0, tax: 0, total: subtotal, currency: 'SYP' };
 
-    const createdOrder = await orderRepository.create({
+    const atomicItems = activeItems.map((it: any) => ({
+      productId: it.product?.id || it.productId,
+      sku: '',
+      productName: it.product?.nameAr || it.product?.name || it.productName,
+      variantName: '',
+      thumbnail: it.product?.thumbnail || it.product?.imageUrl || it.product?.image || it.thumbnail || '',
+      selectedColor: it.selectedColor || it.selected_color || undefined,
+      selectedSize: it.selectedSize || it.selected_size || it.selectedOption || it.selected_option || undefined,
+      quantity: it.quantity,
+      unitPrice: it.product?.price || it.unitPrice || it.price || 0,
+      lineTotal: (it.product?.price || it.unitPrice || it.price || 0) * it.quantity,
+      currency: 'SYP',
+    }));
+
+    const payload = {
       orderNumber: `ORD-${Date.now()}`,
       userId: cart.userId!,
       payment,
       shippingAddress: shippingAddress || {},
       addressId: addressId || null,
       pricing,
-    });
+      items: atomicItems,
+    };
 
- for (const it of activeItems) {
-   const finalColor = it.selectedColor || it.selected_color || null;
-   const finalSize = it.selectedSize || it.selected_size || it.selectedOption || it.selected_option || null;
-
-   await orderItemRepository.create({
-     orderId: createdOrder.id,
-     productId: it.product?.id || it.productId,
-     sku: '',
-     productName: it.product?.nameAr || it.product?.name || it.productName,
-     variantName: '',
-     thumbnail: it.product?.thumbnail || it.product?.imageUrl || it.product?.image || it.thumbnail || '',
-     selectedColor: finalColor || undefined,
-     selectedSize: finalSize || undefined,
-     quantity: it.quantity,
-     unitPrice: it.product?.price || it.unitPrice || it.price || 0,
-     lineTotal: (it.product?.price || it.unitPrice || it.price || 0) * it.quantity,
-     currency: 'SYP',
-   });
- }
-
-    // Deduct stock after successful order item creation
-    try {
-      await deductStock(stockItems);
-    } catch (stockError) {
-      console.error(`[CART CONVERT] Stock deduction failed for order ${createdOrder.id}:`, stockError);
-    }
+    const created = await orderService.createAtomic(payload);
 
     await cartRepository.updateById(cart.id, {
       status: CartStatus.CONVERTED,
-      convertedOrderId: createdOrder.id,
+      convertedOrderId: created.id,
     });
+
+    const client = getAdminClient();
+    const order = await orderService.getById(created.id);
+
+    for (const item of stockItems) {
+      const { data: product } = await client
+        .from('products')
+        .select('id, name, stock, total_sold, price, category, thumbnail, isFeatured, status')
+        .eq('id', item.productId)
+        .single();
+
+      if (product) {
+        realtimeService.emitPublic('inventory:updated', { product });
+      }
+    }
 
     realtimeService.emitToUser(String(userId), 'cart:updated', {
       status: CartStatus.CONVERTED,
-      orderId: createdOrder.id,
+      orderId: created.id,
     });
-    realtimeService.emitToUser(String(userId), 'order:created', createdOrder);
-    realtimeService.emitToAdmins('order:created', createdOrder);
+    realtimeService.emitToUser(String(userId), 'order:created', order);
+    realtimeService.emitToAdmins('order:created', order);
 
     try {
       await notificationService.sendOrderStatusNotification(
         userId,
-        createdOrder.orderNumber,
+        order.orderNumber,
         OrderStatus.PENDING,
-        createdOrder.id
+        order.id
       );
-    } catch (notificationError) {
+    } catch {
       // If notification fails, keep order creation intact.
     }
 
-    return this.sendCreated(res, createdOrder);
+    return this.sendCreated(res, order);
   }
 }
 
